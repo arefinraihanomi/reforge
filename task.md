@@ -40,13 +40,13 @@ flowchart LR
   - **Action:** Implement Reforge color tokens (Graphite, Warm Surface, Forge Accent, Deep Slate), Inter typography styles, and Material 3 theme data. (Note: Exclusively Light Theme per user directive).
   - **DoD:** Theme loads cleanly in light mode with verified typography and semantic tokens.
 
-- [ ] **TASK-A1.3: Error & Failure Architecture**
+- [x] **TASK-A1.3: Error & Failure Architecture**
   - **Prerequisites:** TASK-A1.1
   - **Files:** `lib/core/errors/failures.dart`, `lib/core/errors/exceptions.dart`
   - **Action:** Create `AppFailure` abstract class with typed subclasses (`NetworkFailure`, `AuthFailure`, `NotFoundFailure`, `ServerFailure`).
   - **DoD:** Unit test verifying exception-to-failure mapping.
 
-- [ ] **TASK-A1.4: Supabase Client & Environment Bootstrapping**
+- [x] **TASK-A1.4: Supabase Client & Environment Bootstrapping**
   - **Prerequisites:** TASK-A1.1
   - **Files:** `lib/core/network/supabase_client.dart`, `lib/main.dart`
   - **Action:** Initialize `Supabase.initialize` using `.env` credentials with error fallback.
