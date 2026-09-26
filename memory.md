@@ -1,7 +1,7 @@
 # Reforge — Project Memory & Technical Context Log
 
 **Project Name:** Reforge  
-**Status:** Phase A1 Underway (Tasks A1.1 & A1.2 Completed)  
+**Status:** ✅ Phase A1 Complete — Phase A2 (Auth & Profile) Starting Next  
 **Last Updated:** September 2026  
 **System Version:** 1.0 (MVP)
 
@@ -136,5 +136,34 @@ The central thesis of Reforge is that side-project failure is not a terminal dea
     * `lib/core/theme/theme.dart`: Material 3 `ThemeData` configuration including AppBar, Card, Button, Input, and Divider themes.
   * Added unit and widget tests (`test/core/theme/theme_test.dart`) verifying token consistency and scaffold rendering.
   * Ran static analysis with 0 errors/warnings.
+
+* **2026-09-26 — TASK-A1.3: Error & Failure Architecture Completed:**
+  * Implemented typed exception layer (`lib/core/errors/exceptions.dart`): `AppException`, `NetworkException`, `AuthException`, `NotFoundException`, `ServerException`, `ValidationException`.
+  * Implemented domain failure layer (`lib/core/errors/failures.dart`): `AppFailure` base class, `NetworkFailure`, `AuthFailure`, `NotFoundFailure`, `ServerFailure`, `ValidationFailure`.
+  * Added unified exception-to-failure mapper factory (`AppFailure.fromException`) handling generic Dart exceptions, custom AppExceptions, and Supabase client errors (`AuthException`, `PostgrestException` with specific `PGRST116` mapping to `NotFoundFailure`).
+  * Created unit test suite (`test/core/errors/failure_test.dart`) verifying 10 distinct error mapping cases.
+  * Ran static analysis with 0 errors/warnings.
+
+* **2026-09-26 — TASK-A1.4: Supabase Client & Environment Bootstrapping Completed:**
+  * Created `assets/.env` for local credential storage (gitignored for production) with `SUPABASE_URL` and `SUPABASE_ANON_KEY` keys; also added `.env.example` as template.
+  * Registered `assets/.env` as Flutter asset in `pubspec.yaml`.
+  * Implemented `SupabaseBootstrap` (`lib/core/network/supabase_client.dart`):
+    * Resilient dual-path loader (`assets/.env` → `.env` fallback).
+    * Placeholder credential detection — boots into offline/demo mode without crashing if credentials are missing.
+    * Uses `publishableKey` parameter (not deprecated `anonKey`) with `AuthFlowType.pkce` for secure PKCE auth flow.
+  * Exposed Riverpod providers: `supabaseClientProvider`, `currentUserProvider`, `authStateChangesProvider`.
+  * Rewrote `lib/main.dart`: `ProviderScope` root → `WidgetsFlutterBinding.ensureInitialized()` → `SupabaseBootstrap.initialize()` → `ReforgeApp` with `ReforgeTheme.lightTheme`.
+  * Added foundation `ReforgeShellScreen` as temporary home scaffold with Forge-styled greeting, workshop-active badge, and connection-status card.
+  * Updated smoke test (`test/widget_test.dart`) for new `ReforgeApp` structure.
+  * Ran static analysis with 0 errors/warnings.
+
+### ✅ Phase A1: Foundation & Core Infrastructure — COMPLETE
+All four tasks (A1.1 → A1.4) are done. The app now has:
+- Core production dependencies resolved.
+- Strict Light Theme with full Figma-aligned design tokens.
+- Type-safe error/failure architecture with Supabase-aware mapping.
+- Resilient Supabase bootstrap with offline/demo mode fallback.
+
+
 
 
