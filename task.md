@@ -28,7 +28,7 @@ flowchart LR
 ## Phase A1: Foundation & Core Infrastructure
 *Goal: Initialize Flutter dependencies, design tokens, error models, and Supabase client configuration.*
 
-- [ ] **TASK-A1.1: Core Dependencies Configuration**
+- [x] **TASK-A1.1: Core Dependencies Configuration**
   - **Prerequisites:** Flutter SDK installed.
   - **Files:** `pubspec.yaml`
   - **Action:** Add `flutter_riverpod`, `supabase_flutter`, `go_router`, `lucide_icons`, `intl`, `flutter_dotenv`.
