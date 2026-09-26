@@ -1,7 +1,7 @@
 # Reforge — Project Memory & Technical Context Log
 
 **Project Name:** Reforge  
-**Status:** Architecture & Documentation Phase Completed  
+**Status:** Phase A1 Underway (Task A1.1 Completed)  
 **Last Updated:** September 2026  
 **System Version:** 1.0 (MVP)
 
@@ -108,3 +108,16 @@ The central thesis of Reforge is that side-project failure is not a terminal dea
   * `design.md`: Visual identity, design tokens, color palette, typography hierarchy, component specifications, and wireframe layouts.
   * `task.md`: Phased execution roadmap (A1–A8) with granular checklists and Definitions of Done.
   * `memory.md`: Living project memory and ADR repository.
+
+### Milestone A1: Foundation & Core Infrastructure (In Progress)
+* **2026-09-26 — TASK-A1.1: Core Dependencies Configuration Completed:**
+  * Integrated core production packages into `pubspec.yaml`:
+    * `flutter_riverpod` (`^3.4.3`): Declarative reactive state management and dependency injection.
+    * `supabase_flutter` (`^2.17.2`): Managed backend client SDK (PostgreSQL, Auth, Storage, Edge Functions).
+    * `go_router` (`^18.0.1`): Declarative URL routing and redirect guards.
+    * `lucide_icons` (`^0.257.0`): Minimalist outline iconography per design system.
+    * `intl` (`^0.20.3`): Internationalization, time, and numeric formatting.
+    * `flutter_dotenv` (`^6.0.1`): Secure environment variable bootstrap.
+  * Resolved complete dependency tree cleanly without version conflicts via `pub get`.
+  * Verified static analysis with 0 errors/warnings.
+
