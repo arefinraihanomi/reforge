@@ -34,11 +34,11 @@ flowchart LR
   - **Action:** Add `flutter_riverpod`, `supabase_flutter`, `go_router`, `lucide_icons`, `intl`, `flutter_dotenv`.
   - **DoD:** `flutter pub get` completes cleanly without version conflicts.
 
-- [ ] **TASK-A1.2: Design Tokens & Theme Setup**
+- [x] **TASK-A1.2: Design Tokens & Theme Setup**
   - **Prerequisites:** TASK-A1.1
   - **Files:** `lib/core/theme/colors.dart`, `lib/core/theme/typography.dart`, `lib/core/theme/theme.dart`
-  - **Action:** Implement Reforge color tokens (Graphite, Warm Surface, Forge Accent, Deep Slate), Inter typography styles, and Material 3 theme data.
-  - **DoD:** Theme loads cleanly in light/dark modes.
+  - **Action:** Implement Reforge color tokens (Graphite, Warm Surface, Forge Accent, Deep Slate), Inter typography styles, and Material 3 theme data. (Note: Exclusively Light Theme per user directive).
+  - **DoD:** Theme loads cleanly in light mode with verified typography and semantic tokens.
 
 - [ ] **TASK-A1.3: Error & Failure Architecture**
   - **Prerequisites:** TASK-A1.1

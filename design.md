@@ -35,17 +35,20 @@ Reforge avoids neon gamification and overwhelming enterprise dashboard clutter. 
 
 ## 2. Color System & Design Tokens
 
-Reforge provides balanced light and dark palettes anchored by an amber-bronze "Forge" accent:
+Reforge strictly adheres to a single, high-trust **Light Mode** palette anchored by a warm paper-like surface (`warmSurface` `#FBF9F5`) and an amber-bronze "Forge" accent (`#B45309`). Dark mode is intentionally omitted:
 
-| Token Name | Hex Code | Semantic Role | Light Mode Usage | Dark Mode Usage |
-| :--- | :--- | :--- | :--- | :--- |
-| **`colorGraphite`** | `#111827` | Primary Dark Surface / Text | Primary text color | Background surface |
-| **`colorWarmSurface`**| `#F7F3EE` | Soft Neutral Background | Main app background | Subdued contrast text |
-| **`colorDeepSlate`** | `#172033` | Elevated Surface / Card | Header & dark card elements | Card background |
-| **`colorForgeAccent`**| `#B45309` | Brand Primary / Action CTA | Primary buttons, active state | Primary CTA, focus rings |
-| **`colorMuted`** | `#64748B` | Secondary Text & Dividers | Metadata, subtitles, borders | Metadata, inactive icons |
-| **`colorSuccess`** | `#2E7D32` | Success & Active States | Completed tasks, active badges| Success banners, done tags |
-| **`colorDanger`** | `#B91C1C` | Alert, Abandon & Blockers | Abandon actions, blocker tags | Warning badges, errors |
+| Token Name | Hex Code | Semantic Role | Light Mode Usage |
+| :--- | :--- | :--- | :--- |
+| **`colorGraphite`** | `#111827` | Primary Dark Surface / Text | Primary text color & high contrast elements |
+| **`colorWarmSurface`**| `#FBF9F5` | Soft Neutral Background | Main app background (warm paper texture) |
+| **`colorCardSurface`**| `#FFFFFF` | Card & Container Surface | Primary card background |
+| **`colorDeepSlate`** | `#172033` | Deep Slate Surface / Contrast | Bottom navigation bar, avatar, dark feature cards |
+| **`colorForgeAccent`**| `#B45309` | Brand Primary / Action CTA | Primary buttons, active state, left border stripes |
+| **`colorMuted`** | `#64748B` | Secondary Text & Dividers | Metadata, subtitles, timestamps |
+| **`colorSuccess`** | `#15803D` | Success & Active States | Completed tasks, active badges (`#ECFDF5` bg) |
+| **`colorWarning`** | `#B45309` | In-Progress & Exploring | Exploring badges, sprint progress (`#FEF3C7` bg) |
+| **`colorDanger`** | `#B91C1C` | Alert, Abandon & Blockers | Abandon actions, failure points (`#FEF2F2` bg) |
+| **`colorCategory`** | `#4338CA` | Category & Technical Tags | Dev Tools, Security, Architecture (`#EEF2FF` bg) |
 
 ---
 
