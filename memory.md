@@ -1,7 +1,7 @@
 # Reforge — Project Memory & Technical Context Log
 
 **Project Name:** Reforge  
-**Status:** Phase A1 Underway (Task A1.1 Completed)  
+**Status:** Phase A1 Underway (Tasks A1.1 & A1.2 Completed)  
 **Last Updated:** September 2026  
 **System Version:** 1.0 (MVP)
 
@@ -54,6 +54,12 @@ The central thesis of Reforge is that side-project failure is not a terminal dea
 * **Context:** Most tools treat stopping a project as deletion or passive decay.
 * **Decision:** Make abandonment an intentional, guilt-free status transition (`status = 'abandoned'`) accompanied by an exit interview and Graveyard entry.
 * **Consequences:** Prevents data loss, normalizes learning from stopped work, and directly feeds the Reforge resurrection engine.
+
+### ADR-007: Exclusively Light-Mode Design System Aligned with Figma Specifications
+* **Status:** Accepted (2026-09)
+* **Context:** The product aesthetic is inspired by physical engineering workshops, technical documentation, and warm notebook paper (`warmSurface` #FBF9F5). The user explicitly mandated the omission of dark mode.
+* **Decision:** The application will strictly implement a single, high-fidelity Light Theme and will not maintain dual light/dark stylesheets.
+* **Consequences:** Eliminates visual drift, reduces theme maintenance overhead by 50%, guarantees 1:1 fidelity with provided Figma artboards (Home, Ideas Vault, Detail, Post-Mortem, Reforge V2), and speeds up UI delivery.
 
 ---
 
@@ -120,4 +126,15 @@ The central thesis of Reforge is that side-project failure is not a terminal dea
     * `flutter_dotenv` (`^6.0.1`): Secure environment variable bootstrap.
   * Resolved complete dependency tree cleanly without version conflicts via `pub get`.
   * Verified static analysis with 0 errors/warnings.
+
+* **2026-09-26 — TASK-A1.2: Design Tokens & Theme Setup Completed:**
+  * Analyzed user-provided Figma artboards (Home Screen, Ideas Vault, Idea Detail, Post-Mortem, Reforge V2).
+  * Formalized ADR-007 establishing a strict, single Light Theme (`warmSurface` `#FBF9F5`, pure white card containers, `#172033` deep slate contrast elements).
+  * Implemented design tokens:
+    * `lib/core/theme/colors.dart`: Surfaces, typography colors, brand forge accent (`#B45309`), semantic status pills (`success`, `warning`, `danger`, `category`), and callout tints.
+    * `lib/core/theme/typography.dart`: Strict Inter font sizing and line-height constraints (Greeting, ScreenTitle, SectionTitle, CardTitle, Badges, Metrics, Quotes, Code).
+    * `lib/core/theme/theme.dart`: Material 3 `ThemeData` configuration including AppBar, Card, Button, Input, and Divider themes.
+  * Added unit and widget tests (`test/core/theme/theme_test.dart`) verifying token consistency and scaffold rendering.
+  * Ran static analysis with 0 errors/warnings.
+
 
