@@ -226,7 +226,7 @@ class GraveyardScreen extends ConsumerWidget {
                   height: 14,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                error: (_, __) => const Text('Post-Mortem Status N/A', style: ReforgeTypography.meta),
+                error: (_, _) => const Text('Post-Mortem Status N/A', style: ReforgeTypography.meta),
               ),
               Wrap(
                 spacing: 8,
