@@ -51,10 +51,7 @@ abstract final class SupabaseBootstrap {
     final anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? const String.fromEnvironment('SUPABASE_ANON_KEY');
 
     // 2. Validate credentials
-    final isPlaceholder = url.isEmpty ||
-        anonKey.isEmpty ||
-        url.contains('placeholder') ||
-        anonKey.contains('placeholder');
+    final isPlaceholder = _isPlaceholder(url) || _isPlaceholder(anonKey);
 
     if (isPlaceholder) {
       debugPrint(
@@ -81,5 +78,14 @@ abstract final class SupabaseBootstrap {
       _isInitialized = false;
       // Do not rethrow so app boots safely into shell
     }
+  }
+
+  static bool _isPlaceholder(String value) {
+    final normalized = value.trim().toLowerCase();
+    return normalized.isEmpty ||
+        normalized.contains('placeholder') ||
+        normalized.startsWith('your_') ||
+        normalized == 'changeme' ||
+        normalized == 'change_me';
   }
 }

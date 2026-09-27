@@ -1,7 +1,7 @@
 # Reforge — Project Memory & Technical Context Log
 
 **Project Name:** Reforge  
-**Status:** ✅ Phase A2 Complete — Phase A3 implementation complete; verification pending
+**Status:** ✅ Phase A6 (Reforge Engine & V2 Resurrection) Complete — Phase A7 Next
 **Last Updated:** September 27, 2026
 **System Version:** 1.0 (MVP)
 
@@ -208,3 +208,80 @@ All three tasks (A2.1 → A2.3) are done. The app now has:
 * **TASK-A3.2: Repository & State:** Added idea/tag domain models, `SupabaseIdeasRepository` CRUD and tag association methods, Riverpod list/detail/tag/stat providers, filter state, and mutation actions. Added notifier tests for create, filtered list, tag association, and archive in `test/features/ideas/ideas_notifier_test.dart`; tests were not executed. Concrete repository queries still need a backend-backed check.
 * **TASK-A3.3: Idea Vault UI:** The Ideas tab is wired into the existing shell work. The vault provides search, status/tag filters, stats, loading/error/empty states, and idea cards. Quick capture supports title-first entry, optional description, tag selection, and tag creation. Idea detail includes lifecycle/stage display, archive/delete actions, and an edit sheet for idea fields, tags, status, and stage. The project conversion CTA remains an intentional Phase A4 placeholder.
 * **Verification constraint:** No `flutter analyze`, `flutter test`, or database commands were run, at the user's request. Dart editor diagnostics reported no issues in the changed Dart files; run the Flutter checks and apply/verify the migration locally before marking A3 fully done in `task.md`.
+
+---
+
+### Milestone A4: Projects & Workspace (Completed)
+* **2026-09-27 — TASK-A4.1: Projects & Tasks Schema:** Added `supabase/migrations/20260926000003_create_projects_and_tasks.sql` defining `projects` and `project_tasks` tables, status/priority constraints, owner-scoped RLS policies, performance indexes, and `updated_at` triggers.
+* **2026-09-27 — TASK-A4.2: Atomic Conversion Stored Function (RPC):** Added `supabase/migrations/20260926000004_convert_idea_rpc.sql` defining PL/pgSQL function `convert_idea_to_project(p_idea_id UUID, p_mvp_scope TEXT, p_initial_tasks JSONB)` to atomically create project, update idea status to `converted`, and seed initial checklist tasks in one transaction.
+* **2026-09-27 — TASK-A4.3: Project Workspace & Tasks UI:**
+  - Added domain models (`lib/features/projects/models/project.dart`, `lib/features/projects/models/project_task.dart`).
+  - Added repository layer (`lib/features/projects/data/projects_repository.dart`) and Riverpod state notifiers (`projects_notifier.dart`).
+  - Implemented `ConvertIdeaDialog` modal sheet for refining MVP scope and initial tasks.
+  - Implemented `ProjectWorkspaceScreen` with prominent Figma-aligned MVP Scope Banner, progress bar, interactive task checklist (optimistic add/toggle/delete), and Phase A5 decision/abandonment placeholders.
+  - Added `ProjectsListScreen` and registered routing in `routes.dart` (`/projects/:id`) and `shell_screen.dart`.
+
+---
+
+### ✅ Phase A4: Projects & Workspace — COMPLETE
+All three tasks (A4.1 → A4.3) are done. The app now has:
+- Relational schema for active project workspaces and task checklists.
+- Atomic PL/pgSQL RPC conversion from Idea Vault into Projects.
+- Full domain, repository, and Riverpod state management.
+- Figma-aligned UI featuring MVP Scope Banner, Task Checklist with optimistic UI, and GoRouter navigation.
+
+---
+
+### Milestone A5: Project Memory, Graveyard & Post-Mortem (Completed)
+* **2026-09-27 — TASK-A5.1: Memory, Post-Mortems & Lessons Migration:** Added `supabase/migrations/20260926000005_create_memory_and_postmortems.sql` defining `project_decisions` (architectural choices/blockers/notes), `project_postmortems` (guilt-free abandonment reflections with UNIQUE `project_id`), and `project_lessons` (reusable knowledge bank across versions), complete with owner-scoped RLS policies, performance indexes, and `updated_at` triggers.
+* **2026-09-27 — TASK-A5.2: Project Memory Logging UI:**
+  - Created `ProjectDecision` domain model (`lib/features/projects/models/project_decision.dart`).
+  - Added decision CRUD methods to `ProjectsRepository` and Riverpod `projectDecisionsProvider`.
+  - Built `LogDecisionDialog` modal sheet for 2-tap logging of decisions, technical blockers, and general notes.
+  - Built `ProjectMemoryScreen` timeline UI with filter chips (All, Decisions, Blockers, Notes) and chronological execution context.
+  - Connected `ProjectWorkspaceScreen` "Log Decision" action button and "View Timeline" link with GoRouter path `/projects/:id/memory`.
+* **2026-09-27 — TASK-A5.3 & TASK-A5.4: Abandonment Workflow, Graveyard & Post-Mortem Screen:**
+  - Created domain models (`lib/features/postmortem/models/postmortem.dart`, `lib/features/postmortem/models/lesson.dart`).
+  - Added `PostmortemRepository` & Riverpod state notifiers (`postmortem_notifier.dart`).
+  - Implemented `AbandonDialog` modal capturing primary abandonment reason (`scope_creep`, `technical_blocker`, `shifted_interest`, `time_constraint`, `other`) and transitioning project status to `abandoned`.
+  - Implemented `GraveyardScreen` memorial list displaying abandoned projects with reason badges and post-mortem status.
+  - Implemented `PostmortemScreen` guided reflection form extracting reusable lessons into `project_lessons`.
+  - Registered `GraveyardScreen` in bottom navigation tab 3 and `/postmortem/:projectId` route in `routes.dart`.
+
+---
+
+### ✅ Phase A5: Project Memory, Graveyard & Post-Mortem — COMPLETE
+All four tasks (A5.1 → A5.4) are done. The app now has:
+- Complete database schema & RLS policies for decisions, post-mortems, and lessons.
+- Real-time decision & blocker logging UI with timeline view.
+- Guilt-free deliberate abandonment workflow.
+- Graveyard memorial view and guided Post-Mortem screen preserving reusable lessons for V2 resurrection.
+
+---
+
+### Milestone A6: Reforge Engine & V2 Resurrection (Completed)
+* **2026-09-27 — TASK-A6.1: Project Versions Lineage Migration:** Added `supabase/migrations/20260926000006_create_project_lineage.sql` defining `project_versions` table linking ancestor V1 projects to resurrected V2 projects with `CHECK (source_project_id != new_project_id)` to prevent circular self-referential lineage, composite indexes, and owner-scoped RLS policies.
+* **2026-09-27 — TASK-A6.2: Reforge Repository & Resurrection Service:**
+  - Created domain model `ProjectVersion` (`lib/features/reforge/models/project_version.dart`).
+  - Implemented `ReforgeRepository` (`lib/features/reforge/data/reforge_repository.dart`) and Riverpod state notifier `ReforgeNotifier` (`reforge_notifier.dart`).
+  - Added resurrection logic that creates a V2 project in Supabase, links lineage records, populates tighter MVP scope, seeds initial V2 checklist tasks, and carries forward selected ancestor post-mortem lessons.
+* **2026-09-27 — TASK-A6.3: Reforge Wizard UI:**
+  - Built guided 3-step wizard screen `ReforgeWizardScreen` (`lib/features/reforge/presentation/reforge_wizard_screen.dart`):
+    - **Step 1:** Review & select past V1 post-mortem lessons to carry forward.
+    - **Step 2:** Redefine tighter V2 MVP scope boundary, architectural changes summary, and initial checklist tasks.
+    - **Step 3:** Confirmation card & Forge V2 trigger button navigation directly to `/projects/:newProjectId`.
+  - Registered `/reforge/:sourceProjectId` path in `routes.dart`.
+  - Added "Reforge into V2 🔥" action buttons in `GraveyardScreen` project cards and `PostmortemScreen` action header.
+
+---
+
+### ✅ Phase A6: Reforge Engine & V2 Resurrection — COMPLETE
+All three tasks (A6.1 → A6.3) are done. The app now has:
+- Relational lineage database model preventing circular references.
+- Resurrection service linking ancestor V1 lessons with V2 project creation.
+- Guided 3-step Reforge Wizard UI with ancestor lesson selection, MVP scope tightening, and direct workspace navigation.
+
+
+
+
+

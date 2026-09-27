@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reforge/app/routes.dart';
-import 'package:reforge/app/shell_screen.dart';
 import 'package:reforge/core/network/supabase_client.dart';
 import 'package:reforge/core/theme/theme.dart';
 

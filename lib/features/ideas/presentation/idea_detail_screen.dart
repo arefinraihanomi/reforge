@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/network/ai_gateway_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../models/idea.dart';
+import '../../projects/presentation/convert_idea_dialog.dart';
 import 'idea_edit_sheet.dart';
 import 'ideas_notifier.dart';
 
@@ -633,20 +635,97 @@ class _WorkshopNotesSection extends StatelessWidget {
 // Action Buttons
 // =============================================================================
 
-class _ActionButtons extends ConsumerWidget {
+class _ActionButtons extends ConsumerStatefulWidget {
   final Idea idea;
   const _ActionButtons({required this.idea});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ActionButtons> createState() => _ActionButtonsState();
+}
+
+class _ActionButtonsState extends ConsumerState<_ActionButtons> {
+  bool _aiLoading = false;
+  _AiIdeaReviewCard? _aiResult;
+
+  Future<void> _runAiReview() async {
+    setState(() {
+      _aiLoading = true;
+      _aiResult = null;
+    });
+    final service = ref.read(aiGatewayServiceProvider);
+    final result = await service.reviewIdea(
+      title: widget.idea.title,
+      description: widget.idea.description,
+      tags: widget.idea.tags.map((t) => t.name).toList(),
+    );
+    if (mounted) {
+      setState(() {
+        _aiLoading = false;
+        if (result != null) {
+          _aiResult = _AiIdeaReviewCard(
+            summary: result.summary,
+            risks: result.risks,
+            mvpCut: result.recommendedMvpCut,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('AI review unavailable. Please enter details manually.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
+        // AI Advisory Card (non-blocking — shown if result available)
+        if (_aiResult != null) ...[
+          _aiResult!,
+          const SizedBox(height: 12),
+        ],
+
+        // AI Review Button
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _aiLoading ? null : _runAiReview,
+            icon: _aiLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: ReforgeColors.forgeAccent,
+                    ),
+                  )
+                : const Icon(LucideIcons.bot, size: 16, color: ReforgeColors.forgeAccent),
+            label: Text(
+              _aiLoading ? 'Reviewing with AI...' : 'AI Scope Review 🤖',
+              style: ReforgeTypography.bodyMedium.copyWith(
+                color: ReforgeColors.forgeAccent,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: ReforgeColors.forgeAccent,
+              side: const BorderSide(color: ReforgeColors.forgeAccent),
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
         // Primary CTA: Turn into Project
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
             onPressed: () {
-              // TODO: Phase A4 — Convert idea to project
+              ConvertIdeaDialog.show(context, widget.idea);
             },
             icon: const Icon(LucideIcons.hammer, size: 18),
             label: const Text('Turn into Project →'),
@@ -667,7 +746,7 @@ class _ActionButtons extends ConsumerWidget {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => showIdeaEditSheet(context, idea),
+                onPressed: () => showIdeaEditSheet(context, widget.idea),
                 icon: const Icon(LucideIcons.penLine, size: 16),
                 label: const Text('Edit Idea'),
                 style: OutlinedButton.styleFrom(
@@ -687,7 +766,7 @@ class _ActionButtons extends ConsumerWidget {
                 onPressed: () async {
                   final success = await ref
                       .read(ideasActionProvider.notifier)
-                      .archiveIdea(idea.id);
+                      .archiveIdea(widget.idea.id);
                   if (success && context.mounted) {
                     Navigator.of(context).pop();
                   }
@@ -711,3 +790,99 @@ class _ActionButtons extends ConsumerWidget {
     );
   }
 }
+
+// =============================================================================
+// AI Idea Review Result Card
+// =============================================================================
+
+class _AiIdeaReviewCard extends StatelessWidget {
+  final String summary;
+  final List<String> risks;
+  final String mvpCut;
+
+  const _AiIdeaReviewCard({
+    required this.summary,
+    required this.risks,
+    required this.mvpCut,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ReforgeColors.forgeAccent.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: ReforgeColors.forgeAccent.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.bot, size: 16, color: ReforgeColors.forgeAccent),
+              const SizedBox(width: 8),
+              Text(
+                'AI Scope Advisory',
+                style: ReforgeTypography.cardTitle.copyWith(
+                  color: ReforgeColors.forgeAccent,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(summary, style: ReforgeTypography.body),
+          if (risks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Scope Risks',
+              style: ReforgeTypography.meta.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            for (final risk in risks)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      LucideIcons.alertTriangle,
+                      size: 12,
+                      color: ReforgeColors.warning,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(risk, style: ReforgeTypography.bodySmall)),
+                  ],
+                ),
+              ),
+          ],
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: ReforgeColors.successBg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(LucideIcons.scissors, size: 14, color: ReforgeColors.success),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Recommended MVP Cut: $mvpCut',
+                    style: ReforgeTypography.bodySmall.copyWith(
+                      color: ReforgeColors.success,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

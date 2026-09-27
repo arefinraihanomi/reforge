@@ -93,10 +93,14 @@ class SupabaseIdeasRepository implements IdeasRepository {
     String? searchQuery,
   }) async {
     try {
+      if (!SupabaseBootstrap.isInitialized) return [];
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) return [];
+
       var query = client
           .from('ideas')
           .select(_ideaSelectQuery)
-          .eq('user_id', _userId);
+          .eq('user_id', userId);
 
       if (status != null) {
         query = query.eq('status', status.value);

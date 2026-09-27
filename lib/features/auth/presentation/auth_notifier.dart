@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/failures.dart';
+import '../../../core/network/supabase_client.dart';
 import '../data/auth_repository.dart';
 
 /// UI state for authentication operations.
@@ -36,6 +37,17 @@ class AuthNotifier extends Notifier<AuthUiState> {
 
   AuthRepository get _repository => ref.read(authRepositoryProvider);
 
+  bool _ensureBackendConfigured() {
+    if (SupabaseBootstrap.isInitialized) return true;
+
+    state = state.copyWith(
+      isLoading: false,
+      errorMessage:
+          'Authentication is not configured. Add your Supabase project URL and anon key to assets/.env.',
+    );
+    return false;
+  }
+
   /// Clears any active error or success feedback.
   void clearFeedback() {
     state = state.copyWith(clearError: true, clearSuccess: true);
@@ -47,6 +59,8 @@ class AuthNotifier extends Notifier<AuthUiState> {
     required String password,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    if (!_ensureBackendConfigured()) return false;
+
     try {
       await _repository.signIn(email: email, password: password);
       state = state.copyWith(isLoading: false);
@@ -63,6 +77,27 @@ class AuthNotifier extends Notifier<AuthUiState> {
     }
   }
 
+  /// Signs in a user using Google OAuth / Google Sign-In.
+  Future<bool> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    if (!_ensureBackendConfigured()) return false;
+
+    try {
+      final success = await _repository.signInWithGoogle();
+      state = state.copyWith(isLoading: false);
+      return success;
+    } on AppFailure catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'An unexpected Google sign in error occurred.',
+      );
+      return false;
+    }
+  }
+
   /// Registers a new user account.
   Future<bool> signUp({
     required String email,
@@ -70,6 +105,8 @@ class AuthNotifier extends Notifier<AuthUiState> {
     String? displayName,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    if (!_ensureBackendConfigured()) return false;
+
     try {
       final response = await _repository.signUp(
         email: email,

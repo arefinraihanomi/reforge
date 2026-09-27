@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/failures.dart';
@@ -30,6 +33,9 @@ abstract interface class AuthRepository {
     required String email,
     required String password,
   });
+
+  /// Signs in a user using Google OAuth or Native Google Sign-In.
+  Future<bool> signInWithGoogle();
 
   /// Signs out the currently authenticated user session.
   Future<void> signOut();
@@ -93,6 +99,52 @@ class SupabaseAuthRepository implements AuthRepository {
       return response;
     } catch (e) {
       throw AppFailure.fromException(e);
+    }
+  }
+
+  @override
+  Future<bool> signInWithGoogle() async {
+    try {
+      final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'];
+      final iosClientId = dotenv.env['GOOGLE_IOS_CLIENT_ID'];
+
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: iosClientId,
+        serverClientId: webClientId,
+      );
+
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        // User canceled sign-in
+        return false;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (idToken != null) {
+        await client.auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+        return true;
+      } else {
+        // Fallback to web OAuth flow if ID token is not available
+        final redirected = await client.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: kIsWeb ? null : 'io.supabase.reforge://login-callback',
+        );
+        return redirected;
+      }
+    } catch (_) {
+      // Direct OAuth fallback if google_sign_in fails or lacks configuration
+      final redirected = await client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'io.supabase.reforge://login-callback',
+      );
+      return redirected;
     }
   }
 

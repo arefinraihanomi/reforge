@@ -279,6 +279,26 @@ void main() {
       });
     });
 
+    group('signInWithGoogle', () {
+      test('falls back to signInWithOAuth when native google sign in throws or is unconfigured', () async {
+        when(
+          () => mockAuth.signInWithOAuth(
+            OAuthProvider.google,
+            redirectTo: any(named: 'redirectTo'),
+          ),
+        ).thenAnswer((_) async => true);
+
+        final result = await repository.signInWithGoogle();
+        expect(result, isTrue);
+        verify(
+          () => mockAuth.signInWithOAuth(
+            OAuthProvider.google,
+            redirectTo: any(named: 'redirectTo'),
+          ),
+        ).called(1);
+      });
+    });
+
     group('Riverpod Provider', () {
       test('authRepositoryProvider resolves SupabaseAuthRepository', () {
         final container = ProviderContainer(
