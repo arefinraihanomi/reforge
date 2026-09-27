@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Environment files & Secrets
+.env
+.env.*
+!.env.example
+assets/.env
