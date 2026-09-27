@@ -57,19 +57,19 @@ flowchart LR
 ## Phase A2: Authentication & Profile
 *Goal: Secure user registration, login, session persistence, and profile creation.*
 
-- [ ] **TASK-A2.1: Supabase Profiles Migration & RLS**
+- [x] **TASK-A2.1: Supabase Profiles Migration & RLS**
   - **Prerequisites:** Local Supabase setup.
   - **Files:** `supabase/migrations/20260926000001_create_profiles.sql`
   - **Action:** Create `profiles` table linked to `auth.users(id)` with auto-trigger on signup and RLS policies.
   - **DoD:** SQL migration applies cleanly via `supabase db reset`.
 
-- [ ] **TASK-A2.2: Auth Repository & Data Source**
+- [x] **TASK-A2.2: Auth Repository & Data Source**
   - **Prerequisites:** TASK-A2.1
   - **Files:** `lib/features/auth/data/auth_repository.dart`
   - **Action:** Implement `signUp`, `signIn`, `signOut`, `getCurrentSession`, `getProfile`.
   - **DoD:** Mock unit tests verifying auth state emissions.
 
-- [ ] **TASK-A2.3: Auth UI & Protected Routing**
+- [x] **TASK-A2.3: Auth UI & Protected Routing**
   - **Prerequisites:** TASK-A2.2
   - **Files:** `lib/features/auth/presentation/login_screen.dart`, `lib/app/routes.dart`
   - **Action:** Implement Login & Signup screens adhering to design tokens. Configure `GoRouter` redirect guards for unauthenticated sessions.
