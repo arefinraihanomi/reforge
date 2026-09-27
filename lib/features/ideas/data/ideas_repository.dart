@@ -1,0 +1,340 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/errors/failures.dart';
+import '../../../core/network/supabase_client.dart';
+import '../models/idea.dart';
+import '../models/tag.dart';
+
+/// The standard select query that joins tags through the idea_tags junction.
+const _ideaSelectQuery = '*, idea_tags(tag_id, tags(*))';
+
+/// Abstract contract for Idea Vault data operations.
+abstract interface class IdeasRepository {
+  /// Lists all ideas for the current user, optionally filtered by [status] or [tagIds].
+  ///
+  /// Results are ordered by [createdAt] descending (most recent first).
+  Future<List<Idea>> listIdeas({
+    IdeaStatus? status,
+    List<String>? tagIds,
+    String? searchQuery,
+  });
+
+  /// Fetches a single idea by [ideaId] with its tags.
+  Future<Idea> getIdea(String ideaId);
+
+  /// Creates a new idea and optionally associates [tagIds].
+  ///
+  /// Returns the created idea with tags populated.
+  Future<Idea> createIdea({
+    required String title,
+    String? description,
+    String? problem,
+    String? targetUsers,
+    String? potentialDirection,
+    String? hypothesis,
+    IdeaStatus status = IdeaStatus.active,
+    List<String>? tagIds,
+  });
+
+  /// Updates an existing idea.
+  ///
+  /// Pass [tagIds] to replace all tag associations (set semantics).
+  Future<Idea> updateIdea({
+    required String ideaId,
+    String? title,
+    String? description,
+    String? problem,
+    String? targetUsers,
+    String? potentialDirection,
+    String? hypothesis,
+    List<WorkshopNote>? workshopNotes,
+    IdeaStatus? status,
+    IdeaStage? stage,
+    int? revisionsCount,
+    List<String>? tagIds,
+  });
+
+  /// Archives an idea (soft delete) by setting status to [IdeaStatus.archived].
+  Future<void> archiveIdea(String ideaId);
+
+  /// Permanently deletes an idea.
+  Future<void> deleteIdea(String ideaId);
+
+  /// Lists all tags belonging to the current user.
+  Future<List<Tag>> listTags();
+
+  /// Creates a new tag. Returns the created tag.
+  ///
+  /// If a tag with the same name already exists for this user,
+  /// returns the existing tag.
+  Future<Tag> createTag({required String name, String? color});
+
+  /// Deletes a tag by [tagId]. Cascade removes idea_tags associations.
+  Future<void> deleteTag(String tagId);
+}
+
+/// Supabase implementation of [IdeasRepository].
+class SupabaseIdeasRepository implements IdeasRepository {
+  final SupabaseClient client;
+
+  SupabaseIdeasRepository({required this.client});
+
+  String get _userId {
+    final user = client.auth.currentUser;
+    if (user == null) throw const AuthFailure(message: 'Not authenticated');
+    return user.id;
+  }
+
+  @override
+  Future<List<Idea>> listIdeas({
+    IdeaStatus? status,
+    List<String>? tagIds,
+    String? searchQuery,
+  }) async {
+    try {
+      var query = client
+          .from('ideas')
+          .select(_ideaSelectQuery)
+          .eq('user_id', _userId);
+
+      if (status != null) {
+        query = query.eq('status', status.value);
+      }
+
+        final List<dynamic> response =
+          await query.order('created_at', ascending: false);
+
+      List<Idea> ideas = response
+          .map((row) => Idea.fromJson(row as Map<String, dynamic>))
+          .toList();
+
+      // Client-side tag filtering — Supabase doesn't support
+      // filtering on nested joins elegantly via PostgREST.
+      if (tagIds != null && tagIds.isNotEmpty) {
+        ideas = ideas.where((idea) {
+          return idea.tags.any((tag) => tagIds.contains(tag.id));
+        }).toList();
+      }
+
+      // Client-side text search on title + description
+      if (searchQuery != null && searchQuery.trim().isNotEmpty) {
+        final q = searchQuery.toLowerCase().trim();
+        ideas = ideas.where((idea) {
+          return idea.title.toLowerCase().contains(q) ||
+              (idea.description?.toLowerCase().contains(q) ?? false) ||
+              (idea.hypothesis?.toLowerCase().contains(q) ?? false) ||
+              idea.tags.any((tag) => tag.name.toLowerCase().contains(q));
+        }).toList();
+      }
+
+      return ideas;
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  @override
+  Future<Idea> getIdea(String ideaId) async {
+    try {
+      final response = await client
+          .from('ideas')
+          .select(_ideaSelectQuery)
+          .eq('id', ideaId)
+          .single();
+
+      return Idea.fromJson(response);
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  @override
+  Future<Idea> createIdea({
+    required String title,
+    String? description,
+    String? problem,
+    String? targetUsers,
+    String? potentialDirection,
+    String? hypothesis,
+    IdeaStatus status = IdeaStatus.active,
+    List<String>? tagIds,
+  }) async {
+    try {
+      final idea = Idea(
+        id: '', // Will be generated by DB
+        userId: _userId,
+        title: title,
+        description: description,
+        problem: problem,
+        targetUsers: targetUsers,
+        potentialDirection: potentialDirection,
+        hypothesis: hypothesis,
+        status: status,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final insertedRow = await client
+          .from('ideas')
+          .insert(idea.toInsertJson())
+          .select()
+          .single();
+
+      final ideaId = insertedRow['id'] as String;
+
+      // Link tags if provided
+      if (tagIds != null && tagIds.isNotEmpty) {
+        await _setIdeaTags(ideaId, tagIds);
+      }
+
+      // Re-fetch with full tag joins
+      return await getIdea(ideaId);
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  @override
+  Future<Idea> updateIdea({
+    required String ideaId,
+    String? title,
+    String? description,
+    String? problem,
+    String? targetUsers,
+    String? potentialDirection,
+    String? hypothesis,
+    List<WorkshopNote>? workshopNotes,
+    IdeaStatus? status,
+    IdeaStage? stage,
+    int? revisionsCount,
+    List<String>? tagIds,
+  }) async {
+    try {
+      // Build partial update map — only include non-null fields
+      final updates = <String, dynamic>{
+        if (title != null) 'title': title.trim(),
+        if (description != null) 'description': description,
+        if (problem != null) 'problem': problem,
+        if (targetUsers != null) 'target_users': targetUsers,
+        if (potentialDirection != null) 'potential_direction': potentialDirection,
+        if (hypothesis != null) 'hypothesis': hypothesis,
+        if (workshopNotes != null)
+          'workshop_notes': workshopNotes.map((n) => n.toJson()).toList(),
+        if (status != null) 'status': status.value,
+        if (stage != null) 'stage': stage.value,
+        if (revisionsCount != null) 'revisions_count': revisionsCount,
+      };
+
+      if (updates.isNotEmpty) {
+        await client
+            .from('ideas')
+            .update(updates)
+            .eq('id', ideaId);
+      }
+
+      // Replace tag associations if provided
+      if (tagIds != null) {
+        await _setIdeaTags(ideaId, tagIds);
+      }
+
+      return await getIdea(ideaId);
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  @override
+  Future<void> archiveIdea(String ideaId) async {
+    try {
+      await client
+          .from('ideas')
+          .update({'status': IdeaStatus.archived.value})
+          .eq('id', ideaId);
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  @override
+  Future<void> deleteIdea(String ideaId) async {
+    try {
+      await client.from('ideas').delete().eq('id', ideaId);
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  // --- Tags ---
+
+  @override
+  Future<List<Tag>> listTags() async {
+    try {
+      final response = await client
+          .from('tags')
+          .select()
+          .eq('user_id', _userId)
+          .order('name');
+
+      return (response as List)
+          .map((row) => Tag.fromJson(row as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  @override
+  Future<Tag> createTag({required String name, String? color}) async {
+    try {
+      final tag = Tag(
+        id: '',
+        userId: _userId,
+        name: name,
+        color: color,
+        createdAt: DateTime.now(),
+      );
+
+      final insertedRow = await client
+          .from('tags')
+          .insert(tag.toInsertJson())
+          .select()
+          .single();
+
+      return Tag.fromJson(insertedRow);
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  @override
+  Future<void> deleteTag(String tagId) async {
+    try {
+      await client.from('tags').delete().eq('id', tagId);
+    } catch (e) {
+      throw AppFailure.fromException(e);
+    }
+  }
+
+  // --- Private Helpers ---
+
+  /// Replaces all tag links for [ideaId] with [tagIds] (set semantics).
+  Future<void> _setIdeaTags(String ideaId, List<String> tagIds) async {
+    // Remove existing links
+    await client.from('idea_tags').delete().eq('idea_id', ideaId);
+
+    // Insert new links
+    if (tagIds.isNotEmpty) {
+      final rows = tagIds
+          .map((tagId) => {'idea_id': ideaId, 'tag_id': tagId})
+          .toList();
+      await client.from('idea_tags').insert(rows);
+    }
+  }
+}
+
+/// Riverpod provider for [IdeasRepository].
+final ideasRepositoryProvider = Provider<IdeasRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return SupabaseIdeasRepository(client: client);
+});

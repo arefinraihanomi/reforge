@@ -1,8 +1,8 @@
 # Reforge — Project Memory & Technical Context Log
 
 **Project Name:** Reforge  
-**Status:** ✅ Phase A1 Complete — Phase A2 (Auth & Profile) Starting Next  
-**Last Updated:** September 2026  
+**Status:** ✅ Phase A2 Complete — Phase A3 implementation complete; verification pending
+**Last Updated:** September 27, 2026
 **System Version:** 1.0 (MVP)
 
 ---
@@ -164,6 +164,47 @@ All four tasks (A1.1 → A1.4) are done. The app now has:
 - Type-safe error/failure architecture with Supabase-aware mapping.
 - Resilient Supabase bootstrap with offline/demo mode fallback.
 
+---
 
+### Milestone A2: Authentication & Profile (Completed)
+* **2026-09-26 — TASK-A2.1: Supabase Profiles Migration & RLS:**
+  * Created database migration `supabase/migrations/20260926000001_create_profiles.sql`.
+  * Configured `public.profiles` table linked via foreign key to `auth.users(id)` with cascading delete.
+  * Implemented automated profile trigger function (`handle_new_user`) populating default username, display name, and avatar on `auth.users` insertion.
+  * Enforced Row-Level Security (RLS) policies:
+    * `profiles_select_policy`: Publicly readable by authenticated users.
+    * `profiles_update_policy`: Strictly updatable only by the owning user (`auth.uid() = id`).
+    * `profiles_insert_policy`: Restricted to owning user or trigger function.
 
+* **2026-09-26 — TASK-A2.2: Auth Repository & Data Source:**
+  * Defined domain model `UserProfile` (`lib/features/auth/models/user_profile.dart`) with JSON serialization and immutable copy utilities.
+  * Defined abstract contract `AuthRepository` (`lib/features/auth/data/auth_repository.dart`):
+    * Methods: `signUp`, `signIn`, `signOut`, `getCurrentSession`, `getProfile`, `updateProfile`.
+    * Streams & getters: `authStateChanges`, `currentUser`.
+  * Implemented concrete `SupabaseAuthRepository` with unified `AppFailure` error translation.
+  * Added unit test suite (`test/features/auth/auth_repository_test.dart`) validating sign in, sign up, session management, and profile fetches.
 
+* **2026-09-26 — TASK-A2.3: Auth UI & Protected Routing:**
+  * Implemented state management with `AuthNotifier` and `AuthUiState` (`lib/features/auth/presentation/auth_notifier.dart`).
+  * Built Figma-aligned `LoginScreen` (`lib/features/auth/presentation/login_screen.dart`) supporting toggling between Login and Signup modes, password visibility toggle, input validation, and loading indicators.
+  * Configured declarative routing and redirect guards with `GoRouter` (`lib/app/routes.dart`):
+    * Unauthenticated users attempting to access protected routes (`/home`, etc.) are redirected to `/login`.
+    * Authenticated users visiting `/login` or `/signup` are redirected to `/home`.
+    * Reactive auth state synchronization via `GoRouterRefreshStream`.
+  * Added integration tests (`test/features/auth/auth_ui_and_routing_test.dart`) verifying route protection and screen rendering.
+  * Ran static analysis and tests with 0 errors/failures.
+
+### ✅ Phase A2: Authentication & Profile — COMPLETE
+All three tasks (A2.1 → A2.3) are done. The app now has:
+- PostgreSQL profiles schema with automated triggers and RLS policies.
+- Repository layer for authentication and user profile management.
+- Complete Login/Signup UI with form validation and feedback.
+- GoRouter redirect guards protecting application routes.
+
+---
+
+### Milestone A3: Idea Vault (Implementation Complete; Verification Pending)
+* **2026-09-27 — TASK-A3.1: Ideas & Tags Schema:** Added `supabase/migrations/20260926000002_create_ideas_and_tags.sql` with `ideas`, `tags`, and `idea_tags`, lifecycle/stage constraints, composite indexes, cascading relationships, and owner-scoped RLS policies. The migration has not been applied against a Supabase database in this session, so cross-user RLS behavior remains unverified.
+* **TASK-A3.2: Repository & State:** Added idea/tag domain models, `SupabaseIdeasRepository` CRUD and tag association methods, Riverpod list/detail/tag/stat providers, filter state, and mutation actions. Added notifier tests for create, filtered list, tag association, and archive in `test/features/ideas/ideas_notifier_test.dart`; tests were not executed. Concrete repository queries still need a backend-backed check.
+* **TASK-A3.3: Idea Vault UI:** The Ideas tab is wired into the existing shell work. The vault provides search, status/tag filters, stats, loading/error/empty states, and idea cards. Quick capture supports title-first entry, optional description, tag selection, and tag creation. Idea detail includes lifecycle/stage display, archive/delete actions, and an edit sheet for idea fields, tags, status, and stage. The project conversion CTA remains an intentional Phase A4 placeholder.
+* **Verification constraint:** No `flutter analyze`, `flutter test`, or database commands were run, at the user's request. Dart editor diagnostics reported no issues in the changed Dart files; run the Flutter checks and apply/verify the migration locally before marking A3 fully done in `task.md`.

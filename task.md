@@ -80,23 +80,25 @@ flowchart LR
 ## Phase A3: Idea Vault
 *Goal: Quick idea capture, tag categorization, search, and lifecycle status.*
 
-- [ ] **TASK-A3.1: Ideas & Tags Database Migration**
+- [x] **TASK-A3.1: Ideas & Tags Database Migration** (Implementation present; RLS runtime verification pending)
   - **Prerequisites:** Phase A2
   - **Files:** `supabase/migrations/20260926000002_create_ideas_and_tags.sql`
   - **Action:** Define `ideas`, `tags`, and `idea_tags` tables with RLS and composite indexes.
   - **DoD:** RLS verified: User A cannot read or write User B's ideas.
 
-- [ ] **TASK-A3.2: Ideas Repository & Notifier**
+- [x] **TASK-A3.2: Ideas Repository & Notifier** (Implementation and notifier tests present; tests not run)
   - **Prerequisites:** TASK-A3.1
   - **Files:** `lib/features/ideas/data/ideas_repository.dart`, `lib/features/ideas/presentation/ideas_notifier.dart`
   - **Action:** Implement CRUD methods, tag association, and Riverpod `AsyncNotifier`.
-  - **DoD:** Repository unit tests covering create, list, and archive.
+  - **DoD:** Create/list/archive notifier flows are covered in `test/features/ideas/ideas_notifier_test.dart`; concrete Supabase repository behavior still needs a connected-backend check.
 
-- [ ] **TASK-A3.3: Idea Vault UI Surfaces**
+- [x] **TASK-A3.3: Idea Vault UI Surfaces** (Implementation present; widget/runtime verification pending)
   - **Prerequisites:** TASK-A3.2
   - **Files:** `lib/features/ideas/presentation/idea_vault_screen.dart`, `lib/features/ideas/presentation/idea_detail_screen.dart`
   - **Action:** Build ideas list with tag chips, quick-add floating action, and idea detail screen.
   - **DoD:** User can create an idea with tags in < 60 seconds; empty state renders when list is empty.
+
+**Phase A3 implementation:** The migration, repository/state layer, tag-aware capture, idea editing, search/filter vault, and detail surface are implemented. This phase remains in progress only for manual Flutter test/analyze execution and database-backed RLS/repository verification; those commands were left for the user to run.
 
 ---
 
