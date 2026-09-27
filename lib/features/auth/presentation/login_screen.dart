@@ -333,6 +333,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                             ),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Divider
+                          Row(
+                            children: [
+                              const Expanded(child: Divider(color: ReforgeColors.border)),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'OR',
+                                  style: ReforgeTypography.meta.copyWith(
+                                    color: ReforgeColors.deepSlate,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const Expanded(child: Divider(color: ReforgeColors.border)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Google Sign-In Button
+                          SizedBox(
+                            height: 48,
+                            child: OutlinedButton(
+                              onPressed: authState.isLoading
+                                  ? null
+                                  : () async {
+                                      ref.read(authNotifierProvider.notifier).clearFeedback();
+                                      await ref
+                                          .read(authNotifierProvider.notifier)
+                                          .signInWithGoogle();
+                                    },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: ReforgeColors.deepSlate,
+                                side: const BorderSide(color: ReforgeColors.border),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const _GoogleLogo(),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Continue with Google',
+                                    style: ReforgeTypography.buttonPrimary.copyWith(
+                                      color: ReforgeColors.deepSlate,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -379,3 +435,77 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
+
+/// Custom painter widget rendering the official 4-color Google brand mark.
+class _GoogleLogo extends StatelessWidget {
+  const _GoogleLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: CustomPaint(
+        painter: _GoogleLogoPainter(),
+      ),
+    );
+  }
+}
+
+class _GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final center = Offset(w / 2, h / 2);
+    final radius = w / 2;
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.22;
+
+    // Blue arc
+    paint.color = const Color(0xFF4285F4);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
+      -0.5,
+      2.1,
+      false,
+      paint,
+    );
+
+    // Green arc
+    paint.color = const Color(0xFF34A853);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
+      1.6,
+      1.8,
+      false,
+      paint,
+    );
+
+    // Yellow arc
+    paint.color = const Color(0xFFFBBC05);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
+      3.4,
+      1.0,
+      false,
+      paint,
+    );
+
+    // Red arc
+    paint.color = const Color(0xFFEA4335);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
+      4.4,
+      1.4,
+      false,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+

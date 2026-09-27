@@ -87,6 +87,15 @@ abstract final class ReforgeTypography {
     color: ReforgeColors.muted,
   );
 
+  /// Compact caption text for helper labels and descriptions
+  static const TextStyle caption = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 1.3,
+    color: ReforgeColors.muted,
+  );
+
   // --- Metrics & Numbers ---
   /// Large prominent metric numbers (e.g., "14", "3", "68%")
   static const TextStyle statNumber = TextStyle(

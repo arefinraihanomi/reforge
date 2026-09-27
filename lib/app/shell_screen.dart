@@ -7,7 +7,10 @@ import '../core/network/supabase_client.dart';
 import '../core/theme/colors.dart';
 import '../core/theme/typography.dart';
 import '../features/auth/presentation/auth_notifier.dart';
+import '../features/graveyard/presentation/graveyard_screen.dart';
 import '../features/ideas/presentation/idea_vault_screen.dart';
+import '../features/postmortem/presentation/reflect_screen.dart';
+import '../features/projects/presentation/projects_list_screen.dart';
 
 /// Tracks the current bottom navigation tab index.
 final shellTabIndexProvider = StateProvider<int>((ref) => 0);
@@ -19,9 +22,9 @@ class ReforgeShellScreen extends ConsumerWidget {
   static const _screens = <Widget>[
     _HomeTab(),
     IdeaVaultScreen(),
-    _PlaceholderTab(label: 'Projects'),
-    _PlaceholderTab(label: 'Graveyard'),
-    _PlaceholderTab(label: 'Reflect'),
+    ProjectsListScreen(),
+    GraveyardScreen(),
+    ReflectScreen(),
   ];
 
   @override

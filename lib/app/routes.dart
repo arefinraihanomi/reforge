@@ -5,6 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/login_screen.dart';
+import '../features/postmortem/presentation/postmortem_screen.dart';
+import '../features/projects/presentation/project_memory_screen.dart';
+import '../features/projects/presentation/project_workspace_screen.dart';
+import '../features/reforge/presentation/reforge_wizard_screen.dart';
 import 'shell_screen.dart';
 
 /// Helper to convert a [Stream] to a [Listenable] for GoRouter refresh.
@@ -69,6 +73,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         builder: (context, state) => const ReforgeShellScreen(),
+      ),
+      GoRoute(
+        path: '/projects/:id',
+        builder: (context, state) {
+          final projectId = state.pathParameters['id'] ?? '';
+          return ProjectWorkspaceScreen(projectId: projectId);
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/memory',
+        builder: (context, state) {
+          final projectId = state.pathParameters['id'] ?? '';
+          return ProjectMemoryScreen(projectId: projectId);
+        },
+      ),
+      GoRoute(
+        path: '/postmortem/:projectId',
+        builder: (context, state) {
+          final projectId = state.pathParameters['projectId'] ?? '';
+          return PostmortemScreen(projectId: projectId);
+        },
+      ),
+      GoRoute(
+        path: '/reforge/:sourceProjectId',
+        builder: (context, state) {
+          final sourceProjectId = state.pathParameters['sourceProjectId'] ?? '';
+          return ReforgeWizardScreen(sourceProjectId: sourceProjectId);
+        },
       ),
     ],
   );

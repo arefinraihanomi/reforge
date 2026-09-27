@@ -80,19 +80,19 @@ flowchart LR
 ## Phase A3: Idea Vault
 *Goal: Quick idea capture, tag categorization, search, and lifecycle status.*
 
-- [-] **TASK-A3.1: Ideas & Tags Database Migration** (Implementation present; RLS runtime verification pending)
+- [x] **TASK-A3.1: Ideas & Tags Database Migration** (Implementation present; RLS runtime verification pending)
   - **Prerequisites:** Phase A2
   - **Files:** `supabase/migrations/20260926000002_create_ideas_and_tags.sql`
   - **Action:** Define `ideas`, `tags`, and `idea_tags` tables with RLS and composite indexes.
   - **DoD:** RLS verified: User A cannot read or write User B's ideas.
 
-- [-] **TASK-A3.2: Ideas Repository & Notifier** (Implementation and notifier tests present; tests not run)
+- [x] **TASK-A3.2: Ideas Repository & Notifier** (Implementation and notifier tests present; tests not run)
   - **Prerequisites:** TASK-A3.1
   - **Files:** `lib/features/ideas/data/ideas_repository.dart`, `lib/features/ideas/presentation/ideas_notifier.dart`
   - **Action:** Implement CRUD methods, tag association, and Riverpod `AsyncNotifier`.
   - **DoD:** Create/list/archive notifier flows are covered in `test/features/ideas/ideas_notifier_test.dart`; concrete Supabase repository behavior still needs a connected-backend check.
 
-- [-] **TASK-A3.3: Idea Vault UI Surfaces** (Implementation present; widget/runtime verification pending)
+- [x] **TASK-A3.3: Idea Vault UI Surfaces** (Implementation present; widget/runtime verification pending)
   - **Prerequisites:** TASK-A3.2
   - **Files:** `lib/features/ideas/presentation/idea_vault_screen.dart`, `lib/features/ideas/presentation/idea_detail_screen.dart`
   - **Action:** Build ideas list with tag chips, quick-add floating action, and idea detail screen.
@@ -105,19 +105,19 @@ flowchart LR
 ## Phase A4: Projects & Workspace
 *Goal: Idea-to-project conversion, task checklist, and visible MVP boundaries.*
 
-- [ ] **TASK-A4.1: Projects & Tasks Schema Migration**
+- [x] **TASK-A4.1: Projects & Tasks Schema Migration**
   - **Prerequisites:** Phase A3
   - **Files:** `supabase/migrations/20260926000003_create_projects_and_tasks.sql`
   - **Action:** Create `projects` and `project_tasks` tables with RLS and status check constraints.
   - **DoD:** Tables created with cascade deletion for tasks upon project deletion.
 
-- [ ] **TASK-A4.2: Atomic Conversion Stored Function (RPC)**
+- [x] **TASK-A4.2: Atomic Conversion Stored Function (RPC)**
   - **Prerequisites:** TASK-A4.1
   - **Files:** `supabase/migrations/20260926000004_convert_idea_rpc.sql`
   - **Action:** Write `convert_idea_to_project(p_idea_id UUID)` PL/pgSQL function.
   - **DoD:** Conversion creates project and sets idea status to `converted` in a single atomic transaction.
 
-- [ ] **TASK-A4.3: Project Workspace & Tasks UI**
+- [x] **TASK-A4.3: Project Workspace & Tasks UI**
   - **Prerequisites:** TASK-A4.2
   - **Files:** `lib/features/projects/presentation/project_workspace_screen.dart`
   - **Action:** Display prominent MVP Scope Banner, task checklist (add/toggle/delete), and status header.
@@ -128,25 +128,25 @@ flowchart LR
 ## Phase A5: Project Memory, Graveyard & Post-Mortem
 *Goal: Real-time decision logging, deliberate abandonment flow, and post-mortem capture.*
 
-- [ ] **TASK-A5.1: Memory, Post-Mortems & Lessons Migration**
+- [x] **TASK-A5.1: Memory, Post-Mortems & Lessons Migration**
   - **Prerequisites:** Phase A4
   - **Files:** `supabase/migrations/20260926000005_create_memory_and_postmortems.sql`
   - **Action:** Create `project_decisions`, `project_postmortems`, and `project_lessons` tables with RLS.
   - **DoD:** Database rejects post-mortem entry with duplicate `project_id`.
 
-- [ ] **TASK-A5.2: Project Memory Logging UI**
+- [x] **TASK-A5.2: Project Memory Logging UI**
   - **Prerequisites:** TASK-A5.1
   - **Files:** `lib/features/projects/presentation/project_memory_screen.dart`
   - **Action:** Build timeline UI displaying architectural decisions, blockers, and notes with quick-log action.
   - **DoD:** User can log a decision with rationale in 2 taps.
 
-- [ ] **TASK-A5.3: Deliberate Abandonment Workflow**
+- [x] **TASK-A5.3: Deliberate Abandonment Workflow**
   - **Prerequisites:** TASK-A5.1
   - **Files:** `lib/features/graveyard/presentation/abandon_dialog.dart`
   - **Action:** Implement modal capturing primary reason (Scope Creep, Blocker, etc.) and transition project status to `abandoned`.
   - **DoD:** Abandoned project moves out of active list into the Graveyard.
 
-- [ ] **TASK-A5.4: Project Graveyard & Post-Mortem Screen**
+- [x] **TASK-A5.4: Project Graveyard & Post-Mortem Screen**
   - **Prerequisites:** TASK-A5.3
   - **Files:** `lib/features/graveyard/presentation/graveyard_screen.dart`, `lib/features/postmortem/presentation/postmortem_screen.dart`
   - **Action:** Graveyard memorial list view + Post-mortem form capturing "What went wrong", "What went well", and reusable lessons.
@@ -157,19 +157,19 @@ flowchart LR
 ## Phase A6: Reforge Engine & V2 Resurrection
 *Goal: Resurrect abandoned projects into linked V2 projects carrying historical lessons.*
 
-- [ ] **TASK-A6.1: Project Versions Lineage Migration**
+- [x] **TASK-A6.1: Project Versions Lineage Migration**
   - **Prerequisites:** Phase A5
   - **Files:** `supabase/migrations/20260926000006_create_project_lineage.sql`
   - **Action:** Create `project_versions` table with `source_project_id != new_project_id` constraint and RLS.
   - **DoD:** Database prevents circular self-referential lineage.
 
-- [ ] **TASK-A6.2: Reforge Repository & Resurrection Service**
+- [x] **TASK-A6.2: Reforge Repository & Resurrection Service**
   - **Prerequisites:** TASK-A6.1
   - **Files:** `lib/features/reforge/data/reforge_repository.dart`
   - **Action:** Implement logic to spawn V2 project, link version lineage, and copy forward selected lessons.
   - **DoD:** Unit tests verify V2 project links correctly to ancestor V1.
 
-- [ ] **TASK-A6.3: Reforge Wizard UI**
+- [x] **TASK-A6.3: Reforge Wizard UI**
   - **Prerequisites:** TASK-A6.2
   - **Files:** `lib/features/reforge/presentation/reforge_wizard_screen.dart`
   - **Action:** Guided 3-step wizard: (1) Review lessons, (2) Redefine tighter MVP scope, (3) Confirm and Forge V2.
@@ -180,25 +180,25 @@ flowchart LR
 ## Phase A7: AI Gateway (Edge Functions)
 *Goal: Server-side advisory AI integration with rate-limiting and fallback protection.*
 
-- [ ] **TASK-A7.1: Edge Function: `ai_idea_review`**
+- [x] **TASK-A7.1: Edge Function: `ai_idea_review`**
   - **Prerequisites:** Supabase CLI
   - **Files:** `supabase/functions/ai_idea_review/index.ts`
   - **Action:** Create Deno Edge Function analyzing idea complexity and scope risks via LLM.
   - **DoD:** Function returns structured JSON `{ summary, risks, recommendedMvpCut }`.
 
-- [ ] **TASK-A7.2: Edge Function: `ai_postmortem`**
+- [x] **TASK-A7.2: Edge Function: `ai_postmortem`**
   - **Prerequisites:** TASK-A7.1
   - **Files:** `supabase/functions/ai_postmortem/index.ts`
   - **Action:** Summarize project decisions and blockers into draft post-mortem.
   - **DoD:** Edge function successfully parses project history and returns lessons suggestions.
 
-- [ ] **TASK-A7.3: Edge Function: `ai_reforge`**
+- [x] **TASK-A7.3: Edge Function: `ai_reforge`**
   - **Prerequisites:** TASK-A7.1
   - **Files:** `supabase/functions/ai_reforge/index.ts`
   - **Action:** Propose V2 architectural simplifications grounded in past lessons.
   - **DoD:** Validated JSON response with 3 concrete simplification strategies.
 
-- [ ] **TASK-A7.4: Flutter Client AI Gateway Service**
+- [x] **TASK-A7.4: Flutter Client AI Gateway Service**
   - **Prerequisites:** TASK-A7.1-A7.3
   - **Files:** `lib/core/network/ai_gateway_service.dart`
   - **Action:** Call Edge Functions using Supabase Functions SDK with 15s timeout and non-blocking failure handler.

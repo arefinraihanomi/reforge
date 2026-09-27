@@ -4,8 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:reforge/app/routes.dart';
-import 'package:reforge/app/shell_screen.dart';
 import 'package:reforge/features/auth/data/auth_repository.dart';
 import 'package:reforge/features/auth/presentation/login_screen.dart';
 import 'package:reforge/main.dart';
@@ -139,6 +137,36 @@ void main() {
 
       expect(find.text('Please enter your email'), findsOneWidget);
       expect(find.text('Please enter your password'), findsOneWidget);
+    });
+
+    testWidgets('Google Sign-In button is present and triggers auth flow', (tester) async {
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      when(() => mockAuthRepository.getCurrentSession()).thenReturn(null);
+      when(() => mockAuthRepository.currentUser).thenReturn(null);
+      when(() => mockAuthRepository.signInWithGoogle()).thenAnswer((_) async => true);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(mockAuthRepository),
+          ],
+          child: const ReforgeApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final googleButton = find.text('Continue with Google');
+      expect(googleButton, findsOneWidget);
+
+      await tester.ensureVisible(googleButton);
+      await tester.tap(googleButton);
+      await tester.pump();
+
+      verify(() => mockAuthRepository.signInWithGoogle()).called(1);
     });
   });
 }
