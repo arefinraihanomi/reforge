@@ -80,19 +80,19 @@ flowchart LR
 ## Phase A3: Idea Vault
 *Goal: Quick idea capture, tag categorization, search, and lifecycle status.*
 
-- [x] **TASK-A3.1: Ideas & Tags Database Migration** (Implementation present; RLS runtime verification pending)
+- [-] **TASK-A3.1: Ideas & Tags Database Migration** (Implementation present; RLS runtime verification pending)
   - **Prerequisites:** Phase A2
   - **Files:** `supabase/migrations/20260926000002_create_ideas_and_tags.sql`
   - **Action:** Define `ideas`, `tags`, and `idea_tags` tables with RLS and composite indexes.
   - **DoD:** RLS verified: User A cannot read or write User B's ideas.
 
-- [x] **TASK-A3.2: Ideas Repository & Notifier** (Implementation and notifier tests present; tests not run)
+- [-] **TASK-A3.2: Ideas Repository & Notifier** (Implementation and notifier tests present; tests not run)
   - **Prerequisites:** TASK-A3.1
   - **Files:** `lib/features/ideas/data/ideas_repository.dart`, `lib/features/ideas/presentation/ideas_notifier.dart`
   - **Action:** Implement CRUD methods, tag association, and Riverpod `AsyncNotifier`.
   - **DoD:** Create/list/archive notifier flows are covered in `test/features/ideas/ideas_notifier_test.dart`; concrete Supabase repository behavior still needs a connected-backend check.
 
-- [x] **TASK-A3.3: Idea Vault UI Surfaces** (Implementation present; widget/runtime verification pending)
+- [-] **TASK-A3.3: Idea Vault UI Surfaces** (Implementation present; widget/runtime verification pending)
   - **Prerequisites:** TASK-A3.2
   - **Files:** `lib/features/ideas/presentation/idea_vault_screen.dart`, `lib/features/ideas/presentation/idea_detail_screen.dart`
   - **Action:** Build ideas list with tag chips, quick-add floating action, and idea detail screen.
