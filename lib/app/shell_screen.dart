@@ -1,15 +1,154 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod/legacy.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/network/supabase_client.dart';
 import '../core/theme/colors.dart';
 import '../core/theme/typography.dart';
 import '../features/auth/presentation/auth_notifier.dart';
+import '../features/ideas/presentation/idea_vault_screen.dart';
+
+/// Tracks the current bottom navigation tab index.
+final shellTabIndexProvider = StateProvider<int>((ref) => 0);
 
 /// Main shell screen displayed for authenticated users at `/home`.
 class ReforgeShellScreen extends ConsumerWidget {
   const ReforgeShellScreen({super.key});
+
+  static const _screens = <Widget>[
+    _HomeTab(),
+    IdeaVaultScreen(),
+    _PlaceholderTab(label: 'Projects'),
+    _PlaceholderTab(label: 'Graveyard'),
+    _PlaceholderTab(label: 'Reflect'),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentIndex = ref.watch(shellTabIndexProvider);
+
+    return Scaffold(
+      body: IndexedStack(
+        index: currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: ReforgeColors.deepSlate,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: LucideIcons.layoutGrid,
+                  label: 'Home',
+                  isSelected: currentIndex == 0,
+                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 0,
+                ),
+                _NavItem(
+                  icon: LucideIcons.lightbulb,
+                  label: 'Ideas',
+                  isSelected: currentIndex == 1,
+                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 1,
+                  badge: true,
+                ),
+                _NavItem(
+                  icon: LucideIcons.hammer,
+                  label: 'Projects',
+                  isSelected: currentIndex == 2,
+                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 2,
+                ),
+                _NavItem(
+                  icon: LucideIcons.skull,
+                  label: 'Graveyard',
+                  isSelected: currentIndex == 3,
+                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 3,
+                ),
+                _NavItem(
+                  icon: LucideIcons.bookOpen,
+                  label: 'Reflect',
+                  isSelected: currentIndex == 4,
+                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A single bottom navigation item.
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool badge;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    this.badge = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isSelected ? ReforgeColors.forgeAccent : ReforgeColors.deepSlateMuted;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 60,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(icon, size: 22, color: color),
+                if (badge)
+                  Positioned(
+                    top: -3,
+                    right: -6,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: ReforgeColors.danger,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Home tab content (previously the full shell body).
+class _HomeTab extends ConsumerWidget {
+  const _HomeTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,6 +157,7 @@ class ReforgeShellScreen extends ConsumerWidget {
         (currentUser?.email != null ? currentUser!.email!.split('@').first : 'Arefin');
 
     return Scaffold(
+      backgroundColor: ReforgeColors.warmSurface,
       appBar: AppBar(
         title: Row(
           children: [
@@ -32,6 +172,11 @@ class ReforgeShellScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Search',
+            icon: const Icon(LucideIcons.search, size: 20),
+            onPressed: () {},
+          ),
           IconButton(
             tooltip: 'Sign Out',
             icon: const Icon(LucideIcons.logOut, size: 20),
@@ -144,6 +289,28 @@ class ReforgeShellScreen extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Placeholder for tabs that haven't been built yet.
+class _PlaceholderTab extends StatelessWidget {
+  final String label;
+  const _PlaceholderTab({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: ReforgeColors.warmSurface,
+      body: Center(
+        child: Text(
+          '$label\n(Coming soon)',
+          textAlign: TextAlign.center,
+          style: ReforgeTypography.sectionTitle.copyWith(
+            color: ReforgeColors.muted,
           ),
         ),
       ),
