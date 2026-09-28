@@ -108,7 +108,7 @@ void main() {
       // Verify user is on ReforgeShellScreen at /home
       expect(find.byType(ReforgeShellScreen), findsOneWidget);
       expect(find.text('Workshop Active'), findsOneWidget);
-      expect(find.text('Good evening, Arefin'), findsOneWidget);
+      expect(find.text('Hi, Arefin'), findsOneWidget);
       expect(find.byType(LoginScreen), findsNothing);
     });
 
