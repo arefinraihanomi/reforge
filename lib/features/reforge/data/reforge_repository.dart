@@ -52,7 +52,7 @@ class SupabaseReforgeRepository implements ReforgeRepository {
           .from('projects')
           .insert({
             'user_id': userId,
-            if (ideaId != null) 'idea_id': ideaId,
+            'idea_id': ?ideaId,
             'title': v2Title.trim(),
             'summary': 'Resurrected V2 of ${ancestorMap['title']}',
             'mvp_scope': v2MvpScope.trim(),

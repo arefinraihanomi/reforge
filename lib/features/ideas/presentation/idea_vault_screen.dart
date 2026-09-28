@@ -136,7 +136,7 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
                   activeForge: s.activeForge,
                 ),
                 loading: () => const _StatsRow(totalSparks: 0, activeForge: 0),
-                error: (_, __) =>
+                error: (_, _) =>
                     const _StatsRow(totalSparks: 0, activeForge: 0),
               ),
             ),
@@ -285,7 +285,7 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
                   return ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
                     itemCount: ideas.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       return _IdeaCard(
                         idea: ideas[index],
@@ -928,7 +928,7 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
-                error: (_, __) => Text(
+                error: (_, _) => Text(
                   'Tags could not be loaded',
                   style: ReforgeTypography.meta.copyWith(
                     color: ReforgeColors.danger,

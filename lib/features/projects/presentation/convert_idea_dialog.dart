@@ -329,7 +329,7 @@ class _ConvertIdeaDialogState extends ConsumerState<ConvertIdeaDialog> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _tasks.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      separatorBuilder: (_, _) => const SizedBox(height: 6),
                       itemBuilder: (context, index) {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

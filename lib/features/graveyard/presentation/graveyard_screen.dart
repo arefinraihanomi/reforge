@@ -244,6 +244,7 @@ class GraveyardScreen extends ConsumerWidget {
                   'Post-Mortem Status N/A',
                   style: ReforgeTypography.meta,
                 ),
+                error: (_, _) => const Text('Post-Mortem Status N/A', style: ReforgeTypography.meta),
               ),
 
               const SizedBox(height: 12),

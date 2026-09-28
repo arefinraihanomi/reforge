@@ -33,7 +33,7 @@ class _ProjectMemoryScreenState extends ConsumerState<ProjectMemoryScreen> {
     final projectTitle = projectAsync.when(
       data: (p) => p.title,
       loading: () => 'Project Workspace',
-      error: (_, __) => 'Project Workspace',
+      error: (_, _) => 'Project Workspace',
     );
 
     return Scaffold(
