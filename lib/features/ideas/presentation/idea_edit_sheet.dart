@@ -13,7 +13,7 @@ Future<void> showIdeaEditSheet(BuildContext context, Idea idea) {
     useSafeArea: true,
     backgroundColor: ReforgeColors.cardSurface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (_) => _IdeaEditSheet(idea: idea),
   );
@@ -69,93 +69,133 @@ class _IdeaEditSheetState extends ConsumerState<_IdeaEditSheet> {
   @override
   Widget build(BuildContext context) {
     final tagsAsync = ref.watch(tagsListProvider);
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: ReforgeColors.cardSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          24,
-          20,
-          20 + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Edit idea', style: ReforgeTypography.sectionTitle),
-            const SizedBox(height: 16),
-            _field(_title, 'Title'),
-            const SizedBox(height: 12),
-            _field(_description, 'Original spark', maxLines: 3),
-            const SizedBox(height: 12),
-            _field(_problem, 'Why it matters', maxLines: 3),
-            const SizedBox(height: 12),
-            _field(_targetUsers, 'Target users'),
-            const SizedBox(height: 12),
-            _field(_direction, 'Potential direction', maxLines: 2),
-            const SizedBox(height: 12),
-            _field(_hypothesis, 'Hypothesis', maxLines: 2),
-            const SizedBox(height: 16),
-            Text('Status', style: ReforgeTypography.bodyMedium),
-            Wrap(
-              spacing: 8,
-              children: IdeaStatus.values
-                  .map(
-                    (status) => ChoiceChip(
-                      label: Text(status.label),
-                      selected: _status == status,
-                      onSelected: (_) => setState(() => _status = status),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-            Text('Stage', style: ReforgeTypography.bodyMedium),
-            Wrap(
-              spacing: 8,
-              children: IdeaStage.values
-                  .map(
-                    (stage) => ChoiceChip(
-                      label: Text(stage.label),
-                      selected: _stage == stage,
-                      onSelected: (_) => setState(() => _stage = stage),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-            Text('Tags', style: ReforgeTypography.bodyMedium),
-            tagsAsync.when(
-              data: (tags) => Wrap(
-                spacing: 8,
-                children: tags
-                    .map(
-                      (tag) => FilterChip(
-                        label: Text(tag.name),
-                        selected: _tagIds.contains(tag.id),
-                        onSelected: (selected) => setState(() {
-                          if (selected) {
-                            _tagIds.add(tag.id);
-                          } else {
-                            _tagIds.remove(tag.id);
-                          }
-                        }),
-                      ),
-                    )
-                    .toList(),
-              ),
-              loading: () => const LinearProgressIndicator(),
-              error: (_, __) => Text(
-                'Tags could not be loaded',
-                style: ReforgeTypography.meta.copyWith(
-                  color: ReforgeColors.danger,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+      ),
+      child: Column(
+        children: [
+          // 1. Sticky Header with Close Button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Edit idea', style: ReforgeTypography.sectionTitle),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          // 2. Scrollable Body with Sections
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                20 + MediaQuery.viewInsetsOf(context).bottom,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionTitle('Core Information'),
+                  const SizedBox(height: 10),
+                  _field(_title, 'Title'),
+                  const SizedBox(height: 12),
+                  _field(_description, 'Original spark', maxLines: 3),
+                  
+                  const SizedBox(height: 24),
+                  _sectionTitle('Strategy & Validation'),
+                  const SizedBox(height: 10),
+                  _field(_problem, 'Why it matters', maxLines: 3),
+                  const SizedBox(height: 12),
+                  _field(_targetUsers, 'Target users'),
+                  const SizedBox(height: 12),
+                  _field(_direction, 'Potential direction', maxLines: 2),
+                  const SizedBox(height: 12),
+                  _field(_hypothesis, 'Hypothesis', maxLines: 2),
+
+                  const SizedBox(height: 24),
+                  _sectionTitle('Workflow & Organization'),
+                  const SizedBox(height: 12),
+                  Text('Status', style: ReforgeTypography.bodyMedium),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    children: IdeaStatus.values.map((status) {
+                      return ChoiceChip(
+                        label: Text(status.label),
+                        selected: _status == status,
+                        onSelected: (_) => setState(() => _status = status),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Stage', style: ReforgeTypography.bodyMedium),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    children: IdeaStage.values.map((stage) {
+                      return ChoiceChip(
+                        label: Text(stage.label),
+                        selected: _stage == stage,
+                        onSelected: (_) => setState(() => _stage = stage),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Tags', style: ReforgeTypography.bodyMedium),
+                  const SizedBox(height: 6),
+                  tagsAsync.when(
+                    data: (tags) => Wrap(
+                      spacing: 8,
+                      children: tags.map((tag) {
+                        return FilterChip(
+                          label: Text(tag.name),
+                          selected: _tagIds.contains(tag.id),
+                          onSelected: (selected) => setState(() {
+                            if (selected) {
+                              _tagIds.add(tag.id);
+                            } else {
+                              _tagIds.remove(tag.id);
+                            }
+                          }),
+                        );
+                      }).toList(),
+                    ),
+                    loading: () => const LinearProgressIndicator(),
+                    error: (_, __) => Text(
+                      'Tags could not be loaded',
+                      style: ReforgeTypography.meta.copyWith(
+                        color: ReforgeColors.danger,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            SizedBox(
+          ),
+
+          // 3. Sticky Bottom Action Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: ReforgeColors.cardSurface,
+              border: Border(
+                top: BorderSide(color: Colors.white.withOpacity(0.05)),
+              ),
+            ),
+            child: SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: _saving ? null : _save,
@@ -163,6 +203,9 @@ class _IdeaEditSheetState extends ConsumerState<_IdeaEditSheet> {
                   backgroundColor: ReforgeColors.forgeAccent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: _saving
                     ? const SizedBox(
@@ -173,11 +216,25 @@ class _IdeaEditSheetState extends ConsumerState<_IdeaEditSheet> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Save changes'),
+                    : const Text(
+                        'Save changes',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title.toUpperCase(),
+      style: ReforgeTypography.meta.copyWith(
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.1,
+        color: ReforgeColors.forgeAccent,
       ),
     );
   }
