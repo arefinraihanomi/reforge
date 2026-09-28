@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/shell_screen.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../models/project.dart';
@@ -128,15 +129,18 @@ class ProjectsListScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => context.go('/ideas'),
-              icon: const Icon(LucideIcons.lightbulb, size: 18),
-              label: const Text('Go to Idea Vault'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ReforgeColors.forgeAccent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            Consumer(
+              builder: (context, ref, _) => ElevatedButton.icon(
+                onPressed: () =>
+                    ref.read(shellTabIndexProvider.notifier).selectTab(1),
+                icon: const Icon(LucideIcons.lightbulb, size: 18),
+                label: const Text('Go to Idea Vault'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ReforgeColors.forgeAccent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),

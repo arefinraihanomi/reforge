@@ -45,6 +45,9 @@ abstract final class ReforgeColors {
   /// Lighter shade for highlights & progress tracks
   static const Color forgeAccentLight = Color(0xFFD97706);
 
+  /// Translucent tint for forge accent badge backgrounds
+  static const Color forgeAccentBg = Color(0xFFFEF3C7);
+
   // --- Borders & Dividers ---
   /// Default card & element outline
   static const Color border = Color(0xFFE5E7EB);

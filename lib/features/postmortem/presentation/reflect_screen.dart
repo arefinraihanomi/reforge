@@ -58,22 +58,36 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Reflection Vault',
+                          style: ReforgeTypography.screenTitle,
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Cross-project lessons & engineering takeaways',
+                          style: ReforgeTypography.meta,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'Reflection Vault',
-                        style: ReforgeTypography.screenTitle,
+                      IconButton(
+                        tooltip: 'Record Lesson',
+                        icon: const Icon(LucideIcons.plus, size: 20),
+                        onPressed: () => _showAddLessonDialog(context),
                       ),
-                      const Text(
-                        'Cross-project lessons & engineering takeaways',
-                        style: ReforgeTypography.meta,
+                      IconButton(
+                        tooltip: 'Refresh',
+                        icon: const Icon(LucideIcons.refreshCw, size: 18),
+                        onPressed: () => ref.invalidate(allLessonsProvider),
                       ),
                     ],
-                  ),
-                  IconButton(
-                    icon: const Icon(LucideIcons.refreshCw, size: 18),
-                    onPressed: () => ref.invalidate(allLessonsProvider),
                   ),
                 ],
               ),
@@ -161,6 +175,16 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: ReforgeColors.forgeAccent,
+        foregroundColor: Colors.white,
+        icon: const Icon(LucideIcons.plus, size: 18),
+        label: const Text(
+          'Record Lesson',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        onPressed: () => _showAddLessonDialog(context),
+      ),
     );
   }
 
@@ -195,28 +219,183 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'When you pause or abandon builds, complete a post-mortem to extract key insights and engineering guidelines for future projects.',
+              'Capture key insights and engineering guidelines to prevent past pitfalls in future builds.',
               style: ReforgeTypography.meta,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                ref.read(shellTabIndexProvider.notifier).state = 3; // Switch to Graveyard tab
-              },
-              icon: const Icon(LucideIcons.ghost, size: 16),
-              label: const Text('View Project Graveyard'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ReforgeColors.deepSlate,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => _showAddLessonDialog(context),
+                  icon: const Icon(LucideIcons.plus, size: 16),
+                  label: const Text('Record Lesson'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ReforgeColors.forgeAccent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    ref.read(shellTabIndexProvider.notifier).selectTab(3); // Switch to Graveyard tab
+                  },
+                  icon: const Icon(LucideIcons.ghost, size: 16),
+                  label: const Text('Graveyard'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: ReforgeColors.deepSlate,
+                    side: const BorderSide(color: ReforgeColors.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showAddLessonDialog(BuildContext context) async {
+    final lessonController = TextEditingController();
+    String selectedCat = 'architecture';
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: ReforgeColors.cardSurface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Record Engineering Lesson',
+                        style: ReforgeTypography.cardTitle.copyWith(fontSize: 18),
+                      ),
+                      IconButton(
+                        icon: const Icon(LucideIcons.x, size: 20),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'What architectural pattern, scope lesson, or technical takeaway did you learn?',
+                    style: ReforgeTypography.meta,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Category', style: ReforgeTypography.overline),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: ['architecture', 'scope', 'technical', 'process'].map((cat) {
+                      final isSel = selectedCat == cat;
+                      return ChoiceChip(
+                        selected: isSel,
+                        label: Text(cat.toUpperCase()),
+                        labelStyle: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isSel ? Colors.white : ReforgeColors.graphite,
+                        ),
+                        selectedColor: _getCategoryColor(cat),
+                        backgroundColor: ReforgeColors.warmSurface,
+                        side: BorderSide(
+                          color: isSel ? _getCategoryColor(cat) : ReforgeColors.border,
+                        ),
+                        onSelected: (val) {
+                          if (val) {
+                            setSheetState(() => selectedCat = cat);
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: lessonController,
+                    maxLines: 4,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'e.g., Decouple database layer with clean repository interfaces before writing UI.',
+                      hintStyle: ReforgeTypography.bodySmall,
+                      filled: true,
+                      fillColor: ReforgeColors.warmSurface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: ReforgeColors.border),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ReforgeColors.forgeAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () async {
+                        final text = lessonController.text.trim();
+                        if (text.isEmpty) return;
+
+                        final messenger = ScaffoldMessenger.of(context);
+                        Navigator.of(ctx).pop();
+                        final created = await ref
+                            .read(postmortemActionProvider.notifier)
+                            .createLesson(
+                              lesson: text,
+                              category: selectedCat,
+                            );
+
+                        if (created != null) {
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Text('Lesson added to Reflection Vault.'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text(
+                        'Save Lesson',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
