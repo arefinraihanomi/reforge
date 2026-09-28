@@ -74,10 +74,7 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
     final currentIndex = ref.watch(shellTabIndexProvider);
 
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: ReforgeColors.deepSlate,
@@ -144,7 +141,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? ReforgeColors.forgeAccent : ReforgeColors.deepSlateMuted;
+    final color = isSelected
+        ? ReforgeColors.forgeAccent
+        : ReforgeColors.deepSlateMuted;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -177,8 +176,11 @@ class _HomeTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
-    final displayName = currentUser?.userMetadata?['display_name'] as String? ??
-        (currentUser?.email != null ? currentUser!.email!.split('@').first : 'Arefin');
+    final displayName =
+        currentUser?.userMetadata?['display_name'] as String? ??
+        (currentUser?.email != null
+            ? currentUser!.email!.split('@').first
+            : 'Arefin');
 
     final activeProjectsAsync = ref.watch(activeProjectsProvider);
     final ideasStatsAsync = ref.watch(ideasStatsProvider);
@@ -199,10 +201,8 @@ class _HomeTab extends ConsumerWidget {
             Image.asset(
               'assets/brand/app_logo.png',
               height: 28,
-              errorBuilder: (context, error, stackTrace) => const Text(
-                'Reforge',
-                style: ReforgeTypography.screenTitle,
-              ),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Text('Reforge', style: ReforgeTypography.screenTitle),
             ),
           ],
         ),
@@ -272,7 +272,10 @@ class _HomeTab extends ConsumerWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: ReforgeColors.successBg,
                       borderRadius: BorderRadius.circular(20),

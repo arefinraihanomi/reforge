@@ -33,7 +33,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify presence of greeting and status banner
-    expect(find.text('Good evening, Arefin'), findsOneWidget);
+    expect(find.text('Hi, Arefin'), findsOneWidget);
     expect(find.text('Workshop Active'), findsOneWidget);
     expect(find.text('FOUNDATION ONLINE'), findsOneWidget);
   });

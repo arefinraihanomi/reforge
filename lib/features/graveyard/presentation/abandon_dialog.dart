@@ -206,35 +206,46 @@ class _AbandonDialogState extends ConsumerState<AbandonDialog> {
                   ),
                   const SizedBox(height: 10),
 
-                  _buildReasonTile(
-                    'scope_creep',
-                    'Scope Creep',
-                    'MVP boundary exploded beyond reasonable dev effort',
-                    LucideIcons.target,
-                  ),
-                  _buildReasonTile(
-                    'technical_blocker',
-                    'Technical Blocker',
-                    'Hit architectural roadblock or library limitation',
-                    LucideIcons.alertTriangle,
-                  ),
-                  _buildReasonTile(
-                    'shifted_interest',
-                    'Shifted Focus / Interest',
-                    'Learned what was needed; motivation moved elsewhere',
-                    LucideIcons.compass,
-                  ),
-                  _buildReasonTile(
-                    'time_constraint',
-                    'Time Constraints',
-                    'Life or work priorities require pausing work',
-                    LucideIcons.clock,
-                  ),
-                  _buildReasonTile(
-                    'other',
-                    'Other Reason',
-                    'Any other rationale for archiving',
-                    LucideIcons.helpCircle,
+                  RadioGroup<String>(
+                    groupValue: _selectedReason,
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedReason = val);
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildReasonTile(
+                          'scope_creep',
+                          'Scope Creep',
+                          'MVP boundary exploded beyond reasonable dev effort',
+                          LucideIcons.target,
+                        ),
+                        _buildReasonTile(
+                          'technical_blocker',
+                          'Technical Blocker',
+                          'Hit architectural roadblock or library limitation',
+                          LucideIcons.alertTriangle,
+                        ),
+                        _buildReasonTile(
+                          'shifted_interest',
+                          'Shifted Focus / Interest',
+                          'Learned what was needed; motivation moved elsewhere',
+                          LucideIcons.compass,
+                        ),
+                        _buildReasonTile(
+                          'time_constraint',
+                          'Time Constraints',
+                          'Life or work priorities require pausing work',
+                          LucideIcons.clock,
+                        ),
+                        _buildReasonTile(
+                          'other',
+                          'Other Reason',
+                          'Any other rationale for archiving',
+                          LucideIcons.helpCircle,
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -343,11 +354,7 @@ class _AbandonDialogState extends ConsumerState<AbandonDialog> {
             ),
             Radio<String>(
               value: value,
-              groupValue: _selectedReason,
               activeColor: ReforgeColors.danger,
-              onChanged: (val) {
-                if (val != null) setState(() => _selectedReason = val);
-              },
             ),
           ],
         ),

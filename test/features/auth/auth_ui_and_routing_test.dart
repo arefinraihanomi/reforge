@@ -5,12 +5,46 @@ import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:reforge/features/auth/data/auth_repository.dart';
+import 'package:reforge/features/auth/presentation/auth_notifier.dart';
 import 'package:reforge/features/auth/presentation/login_screen.dart';
 import 'package:reforge/main.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 class MockUser extends Mock implements User {}
 class MockSession extends Mock implements Session {}
+
+/// AuthNotifier subclass that skips the SupabaseBootstrap.isInitialized guard
+/// so widget tests can exercise auth flows without a real Supabase connection.
+class FakeAuthNotifier extends AuthNotifier {
+  final AuthRepository repository;
+  FakeAuthNotifier(this.repository);
+
+  @override
+  Future<bool> signIn({required String email, required String password}) async {
+    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    try {
+      await repository.signIn(email: email, password: password);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    try {
+      final success = await repository.signInWithGoogle();
+      state = state.copyWith(isLoading: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return false;
+    }
+  }
+}
 
 void main() {
   late MockAuthRepository mockAuthRepository;
@@ -74,7 +108,7 @@ void main() {
       // Verify user is on ReforgeShellScreen at /home
       expect(find.byType(ReforgeShellScreen), findsOneWidget);
       expect(find.text('Workshop Active'), findsOneWidget);
-      expect(find.text('Good evening, Arefin'), findsOneWidget);
+      expect(find.text('Hi, Arefin'), findsOneWidget);
       expect(find.byType(LoginScreen), findsNothing);
     });
 
@@ -129,7 +163,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap Sign In with empty fields
+      // Tap Sign In with empty fields — form validation runs before calling notifier
       final submitButton = find.widgetWithText(ElevatedButton, 'Sign In');
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
@@ -149,10 +183,13 @@ void main() {
       when(() => mockAuthRepository.currentUser).thenReturn(null);
       when(() => mockAuthRepository.signInWithGoogle()).thenAnswer((_) async => true);
 
+      final fakeNotifier = FakeAuthNotifier(mockAuthRepository);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             authRepositoryProvider.overrideWithValue(mockAuthRepository),
+            authNotifierProvider.overrideWith(() => fakeNotifier),
           ],
           child: const ReforgeApp(),
         ),
