@@ -147,7 +147,7 @@ class _IdeaEditSheetState extends ConsumerState<_IdeaEditSheet> {
                     .toList(),
               ),
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => Text(
+              error: (_, _) => Text(
                 'Tags could not be loaded',
                 style: ReforgeTypography.meta.copyWith(
                   color: ReforgeColors.danger,

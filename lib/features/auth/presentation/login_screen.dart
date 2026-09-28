@@ -375,14 +375,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const _GoogleLogo(),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Continue with Google',
-                                    style: ReforgeTypography.buttonPrimary.copyWith(
-                                      color: ReforgeColors.deepSlate,
-                                      fontWeight: FontWeight.w600,
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      'Continue with Google',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: ReforgeTypography.buttonPrimary.copyWith(
+                                        color: ReforgeColors.deepSlate,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ],

@@ -348,7 +348,7 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
 
         lessonsAsync.when(
           loading: () => const CircularProgressIndicator(color: ReforgeColors.forgeAccent),
-          error: (_, __) => const Text('No lessons recorded yet.', style: ReforgeTypography.meta),
+          error: (_, _) => const Text('No lessons recorded yet.', style: ReforgeTypography.meta),
           data: (lessons) {
             if (lessons.isEmpty) {
               return Container(

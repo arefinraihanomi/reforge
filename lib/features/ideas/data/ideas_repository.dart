@@ -218,16 +218,16 @@ class SupabaseIdeasRepository implements IdeasRepository {
       // Build partial update map — only include non-null fields
       final updates = <String, dynamic>{
         if (title != null) 'title': title.trim(),
-        if (description != null) 'description': description,
-        if (problem != null) 'problem': problem,
-        if (targetUsers != null) 'target_users': targetUsers,
-        if (potentialDirection != null) 'potential_direction': potentialDirection,
-        if (hypothesis != null) 'hypothesis': hypothesis,
+        'description': ?description,
+        'problem': ?problem,
+        'target_users': ?targetUsers,
+        'potential_direction': ?potentialDirection,
+        'hypothesis': ?hypothesis,
         if (workshopNotes != null)
           'workshop_notes': workshopNotes.map((n) => n.toJson()).toList(),
         if (status != null) 'status': status.value,
         if (stage != null) 'stage': stage.value,
-        if (revisionsCount != null) 'revisions_count': revisionsCount,
+        'revisions_count': ?revisionsCount,
       };
 
       if (updates.isNotEmpty) {

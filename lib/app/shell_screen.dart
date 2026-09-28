@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod/legacy.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/network/supabase_client.dart';
@@ -13,7 +12,18 @@ import '../features/postmortem/presentation/reflect_screen.dart';
 import '../features/projects/presentation/projects_list_screen.dart';
 
 /// Tracks the current bottom navigation tab index.
-final shellTabIndexProvider = StateProvider<int>((ref) => 0);
+class ShellTabIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void setIndex(int index) => state = index;
+
+  @override
+  set state(int value) => super.state = value;
+}
+
+final shellTabIndexProvider =
+    NotifierProvider<ShellTabIndexNotifier, int>(ShellTabIndexNotifier.new);
 
 /// Main shell screen displayed for authenticated users at `/home`.
 class ReforgeShellScreen extends ConsumerWidget {
@@ -292,28 +302,6 @@ class _HomeTab extends ConsumerWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Placeholder for tabs that haven't been built yet.
-class _PlaceholderTab extends StatelessWidget {
-  final String label;
-  const _PlaceholderTab({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: ReforgeColors.warmSurface,
-      body: Center(
-        child: Text(
-          '$label\n(Coming soon)',
-          textAlign: TextAlign.center,
-          style: ReforgeTypography.sectionTitle.copyWith(
-            color: ReforgeColors.muted,
           ),
         ),
       ),
