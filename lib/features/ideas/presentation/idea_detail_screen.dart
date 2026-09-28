@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/shell_screen.dart';
-import '../../../core/network/ai_gateway_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../models/idea.dart';
@@ -37,10 +36,7 @@ class IdeaDetailScreen extends ConsumerWidget {
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Idea Details',
-          style: ReforgeTypography.bodyMedium,
-        ),
+        title: const Text('Idea Details', style: ReforgeTypography.bodyMedium),
         actions: [
           ideaAsync.maybeWhen(
             data: (idea) => idea.status == IdeaStatus.draft
@@ -65,7 +61,8 @@ class IdeaDetailScreen extends ConsumerWidget {
                 size: 20,
                 color: ReforgeColors.graphite,
               ),
-              onSelected: (value) => _handleMenuAction(context, ref, idea, value),
+              onSelected: (value) =>
+                  _handleMenuAction(context, ref, idea, value),
               itemBuilder: (_) => [
                 const PopupMenuItem(
                   value: 'archive',
@@ -207,7 +204,8 @@ class _IdeaDetailBody extends StatelessWidget {
           iconColor: ReforgeColors.category,
           title: 'Potential Direction',
           content: idea.potentialDirection,
-          emptyPlaceholder: 'Add potential tech stacks, markets, or product directions.',
+          emptyPlaceholder:
+              'Add potential tech stacks, markets, or product directions.',
         ),
 
         // Workshop Notes & Scratches
@@ -285,10 +283,7 @@ class _HeaderCard extends StatelessWidget {
                     color: ReforgeColors.muted,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    'Captured $capturedDate',
-                    style: ReforgeTypography.meta,
-                  ),
+                  Text('Captured $capturedDate', style: ReforgeTypography.meta),
                 ],
               ),
               const SizedBox(height: 8),
@@ -543,7 +538,9 @@ class _ContentSection extends StatelessWidget {
           color: ReforgeColors.cardSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isEmpty ? ReforgeColors.border.withValues(alpha: 0.6) : ReforgeColors.border,
+            color: isEmpty
+                ? ReforgeColors.border.withValues(alpha: 0.6)
+                : ReforgeColors.border,
           ),
         ),
         child: Column(
@@ -675,9 +672,7 @@ class _StickyBottomActionBar extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       decoration: BoxDecoration(
         color: ReforgeColors.warmSurface,
-        border: const Border(
-          top: BorderSide(color: ReforgeColors.border),
-        ),
+        border: const Border(top: BorderSide(color: ReforgeColors.border)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),

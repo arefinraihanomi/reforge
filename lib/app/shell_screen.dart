@@ -22,8 +22,9 @@ class ShellTabIndexNotifier extends Notifier<int> {
   set state(int value) => super.state = value;
 }
 
-final shellTabIndexProvider =
-    NotifierProvider<ShellTabIndexNotifier, int>(ShellTabIndexNotifier.new);
+final shellTabIndexProvider = NotifierProvider<ShellTabIndexNotifier, int>(
+  ShellTabIndexNotifier.new,
+);
 
 /// Main shell screen displayed for authenticated users at `/home`.
 class ReforgeShellScreen extends ConsumerWidget {
@@ -42,10 +43,7 @@ class ReforgeShellScreen extends ConsumerWidget {
     final currentIndex = ref.watch(shellTabIndexProvider);
 
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: ReforgeColors.deepSlate,
@@ -61,31 +59,36 @@ class ReforgeShellScreen extends ConsumerWidget {
                   icon: LucideIcons.layoutGrid,
                   label: 'Home',
                   isSelected: currentIndex == 0,
-                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 0,
+                  onTap: () =>
+                      ref.read(shellTabIndexProvider.notifier).state = 0,
                 ),
                 _NavItem(
                   icon: LucideIcons.lightbulb,
                   label: 'Ideas',
                   isSelected: currentIndex == 1,
-                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 1,
+                  onTap: () =>
+                      ref.read(shellTabIndexProvider.notifier).state = 1,
                 ),
                 _NavItem(
                   icon: LucideIcons.hammer,
                   label: 'Projects',
                   isSelected: currentIndex == 2,
-                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 2,
+                  onTap: () =>
+                      ref.read(shellTabIndexProvider.notifier).state = 2,
                 ),
                 _NavItem(
                   icon: LucideIcons.skull,
                   label: 'Graveyard',
                   isSelected: currentIndex == 3,
-                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 3,
+                  onTap: () =>
+                      ref.read(shellTabIndexProvider.notifier).state = 3,
                 ),
                 _NavItem(
                   icon: LucideIcons.bookOpen,
                   label: 'Reflect',
                   isSelected: currentIndex == 4,
-                  onTap: () => ref.read(shellTabIndexProvider.notifier).state = 4,
+                  onTap: () =>
+                      ref.read(shellTabIndexProvider.notifier).state = 4,
                 ),
               ],
             ),
@@ -102,19 +105,19 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final bool badge;
 
   const _NavItem({
     required this.icon,
     required this.label,
     required this.isSelected,
     required this.onTap,
-    this.badge = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? ReforgeColors.forgeAccent : ReforgeColors.deepSlateMuted;
+    final color = isSelected
+        ? ReforgeColors.forgeAccent
+        : ReforgeColors.deepSlateMuted;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -125,22 +128,7 @@ class _NavItem extends StatelessWidget {
           children: [
             Stack(
               clipBehavior: Clip.none,
-              children: [
-                Icon(icon, size: 22, color: color),
-                if (badge)
-                  Positioned(
-                    top: -3,
-                    right: -6,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: ReforgeColors.danger,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
+              children: [Icon(icon, size: 22, color: color)],
             ),
             const SizedBox(height: 4),
             Text(
@@ -165,8 +153,11 @@ class _HomeTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
-    final displayName = currentUser?.userMetadata?['display_name'] as String? ??
-        (currentUser?.email != null ? currentUser!.email!.split('@').first : 'Arefin');
+    final displayName =
+        currentUser?.userMetadata?['display_name'] as String? ??
+        (currentUser?.email != null
+            ? currentUser!.email!.split('@').first
+            : 'Arefin');
 
     return Scaffold(
       backgroundColor: ReforgeColors.warmSurface,
@@ -176,10 +167,8 @@ class _HomeTab extends ConsumerWidget {
             Image.asset(
               'assets/brand/app_logo.png',
               height: 28,
-              errorBuilder: (context, error, stackTrace) => const Text(
-                'Reforge',
-                style: ReforgeTypography.screenTitle,
-              ),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Text('Reforge', style: ReforgeTypography.screenTitle),
             ),
           ],
         ),
@@ -226,7 +215,10 @@ class _HomeTab extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Hi, $displayName', style: ReforgeTypography.greeting),
+                        Text(
+                          'Hi, $displayName',
+                          style: ReforgeTypography.greeting,
+                        ),
                         const SizedBox(height: 4),
                         const Text(
                           'Keep building. Keep refining.',
@@ -236,7 +228,10 @@ class _HomeTab extends ConsumerWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: ReforgeColors.successBg,
                       borderRadius: BorderRadius.circular(20),
@@ -245,7 +240,11 @@ class _HomeTab extends ConsumerWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.circle, size: 8, color: ReforgeColors.success),
+                        Icon(
+                          Icons.circle,
+                          size: 8,
+                          color: ReforgeColors.success,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           'Workshop Active',

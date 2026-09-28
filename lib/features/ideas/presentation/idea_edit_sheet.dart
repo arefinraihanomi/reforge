@@ -69,7 +69,7 @@ class _IdeaEditSheetState extends ConsumerState<_IdeaEditSheet> {
   @override
   Widget build(BuildContext context) {
     final tagsAsync = ref.watch(tagsListProvider);
-    
+
     return Container(
       decoration: BoxDecoration(
         color: ReforgeColors.cardSurface,
@@ -113,7 +113,7 @@ class _IdeaEditSheetState extends ConsumerState<_IdeaEditSheet> {
                   _field(_title, 'Title'),
                   const SizedBox(height: 12),
                   _field(_description, 'Original spark', maxLines: 3),
-                  
+
                   const SizedBox(height: 24),
                   _sectionTitle('Strategy & Validation'),
                   const SizedBox(height: 10),
@@ -174,7 +174,7 @@ class _IdeaEditSheetState extends ConsumerState<_IdeaEditSheet> {
                       }).toList(),
                     ),
                     loading: () => const LinearProgressIndicator(),
-                    error: (_, __) => Text(
+                    error: (_, _) => Text(
                       'Tags could not be loaded',
                       style: ReforgeTypography.meta.copyWith(
                         color: ReforgeColors.danger,
@@ -192,7 +192,7 @@ class _IdeaEditSheetState extends ConsumerState<_IdeaEditSheet> {
             decoration: BoxDecoration(
               color: ReforgeColors.cardSurface,
               border: Border(
-                top: BorderSide(color: Colors.white.withOpacity(0.05)),
+                top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
               ),
             ),
             child: SizedBox(
