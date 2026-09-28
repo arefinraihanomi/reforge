@@ -104,6 +104,37 @@ class PostmortemActionNotifier extends Notifier<AsyncValue<void>> {
     }
   }
 
+  /// Records a standalone lesson / reflection takeaway directly.
+  Future<ProjectLesson?> createLesson({
+    required String lesson,
+    required String category,
+    String? projectId,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final created = await _repository.createLesson(
+        lesson: lesson,
+        category: category,
+        projectId: projectId,
+      );
+      state = const AsyncData(null);
+      ref.invalidate(allLessonsProvider);
+      if (projectId != null) {
+        ref.invalidate(projectLessonsProvider(projectId));
+      }
+      return created;
+    } on AppFailure catch (e, st) {
+      state = AsyncError(e, st);
+      return null;
+    } catch (e, st) {
+      state = AsyncError(
+        const ServerFailure(message: 'Failed to record lesson.'),
+        st,
+      );
+      return null;
+    }
+  }
+
   void _invalidateAll() {
     ref.invalidate(projectsListProvider);
     ref.invalidate(activeProjectsProvider);

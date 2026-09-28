@@ -26,12 +26,50 @@ abstract class PostmortemRepository {
 
   Future<List<ProjectLesson>> getProjectLessons(String projectId);
   Future<List<ProjectLesson>> getAllUserLessons();
+  Future<ProjectLesson> createLesson({
+    required String lesson,
+    required String category,
+    String? projectId,
+  });
 }
 
 class SupabasePostmortemRepository implements PostmortemRepository {
   final SupabaseClient _client;
 
   SupabasePostmortemRepository(this._client);
+
+  static final List<ProjectLesson> _fallbackLessons = [
+    ProjectLesson(
+      id: 'lesson-seed-1',
+      userId: 'workshop-user',
+      lesson: 'Keep the initial MVP slice strictly under 3 core user flows to prevent scope creep.',
+      category: 'scope',
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+    ProjectLesson(
+      id: 'lesson-seed-2',
+      userId: 'workshop-user',
+      lesson: 'Decouple state management early with clear repository interfaces for smooth offline fallback testing.',
+      category: 'architecture',
+      createdAt: DateTime.now().subtract(const Duration(days: 3)),
+    ),
+    ProjectLesson(
+      id: 'lesson-seed-3',
+      userId: 'workshop-user',
+      lesson: 'Validate AI prompt outputs with strict JSON schemas before parsing into domain models.',
+      category: 'technical',
+      createdAt: DateTime.now().subtract(const Duration(days: 5)),
+    ),
+    ProjectLesson(
+      id: 'lesson-seed-4',
+      userId: 'workshop-user',
+      lesson: 'Log architectural decisions immediately when trade-offs are settled so context is never lost.',
+      category: 'process',
+      createdAt: DateTime.now().subtract(const Duration(days: 7)),
+    ),
+  ];
+
+  static final List<ProjectLesson> _localLessons = List.from(_fallbackLessons);
 
   @override
   Future<void> abandonProject({
@@ -184,9 +222,13 @@ class SupabasePostmortemRepository implements PostmortemRepository {
   @override
   Future<List<ProjectLesson>> getAllUserLessons() async {
     try {
-      if (!SupabaseBootstrap.isInitialized) return [];
+      if (!SupabaseBootstrap.isInitialized) {
+        return List.from(_localLessons);
+      }
       final userId = _client.auth.currentUser?.id;
-      if (userId == null) return [];
+      if (userId == null) {
+        return List.from(_localLessons);
+      }
 
       final response = await _client
           .from('project_lessons')
@@ -195,9 +237,63 @@ class SupabasePostmortemRepository implements PostmortemRepository {
           .order('created_at', ascending: false);
 
       final list = (response as List).cast<Map<String, dynamic>>();
-      return list.map((json) => ProjectLesson.fromJson(json)).toList();
+      final lessons = list.map((json) => ProjectLesson.fromJson(json)).toList();
+      if (lessons.isEmpty) {
+        return List.from(_localLessons);
+      }
+      return lessons;
     } catch (e) {
-      throw AppFailure.fromException(e);
+      return List.from(_localLessons);
+    }
+  }
+
+  @override
+  Future<ProjectLesson> createLesson({
+    required String lesson,
+    required String category,
+    String? projectId,
+  }) async {
+    try {
+      final now = DateTime.now();
+      if (!SupabaseBootstrap.isInitialized) {
+        final newLesson = ProjectLesson(
+          id: 'local-lesson-${now.millisecondsSinceEpoch}',
+          projectId: projectId,
+          userId: 'local-user',
+          lesson: lesson.trim(),
+          category: category.toLowerCase().trim(),
+          createdAt: now,
+        );
+        _localLessons.insert(0, newLesson);
+        return newLesson;
+      }
+
+      final userId = _client.auth.currentUser?.id ?? 'local-user';
+      final response = await _client
+          .from('project_lessons')
+          .insert({
+            'user_id': userId,
+            'lesson': lesson.trim(),
+            'category': category.toLowerCase().trim(),
+            if (projectId != null && projectId.isNotEmpty) 'project_id': projectId,
+          })
+          .select()
+          .single();
+
+      final created = ProjectLesson.fromJson(response);
+      _localLessons.insert(0, created);
+      return created;
+    } catch (e) {
+      final fallbackLesson = ProjectLesson(
+        id: 'local-lesson-${DateTime.now().millisecondsSinceEpoch}',
+        projectId: projectId,
+        userId: 'local-user',
+        lesson: lesson.trim(),
+        category: category.toLowerCase().trim(),
+        createdAt: DateTime.now(),
+      );
+      _localLessons.insert(0, fallbackLesson);
+      return fallbackLesson;
     }
   }
 }

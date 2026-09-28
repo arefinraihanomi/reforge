@@ -753,7 +753,7 @@ class _StickyBottomActionBar extends ConsumerWidget {
 
                       if (!success || !context.mounted) return;
 
-                      ref.read(shellTabIndexProvider.notifier).state = 3;
+                      ref.read(shellTabIndexProvider.notifier).selectTab(3);
                       if (context.canPop()) {
                         Navigator.of(context).pop();
                       }
