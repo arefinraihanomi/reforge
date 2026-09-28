@@ -197,68 +197,111 @@ class GraveyardScreen extends ConsumerWidget {
           const SizedBox(height: 12),
 
           // Post-Mortem CTA & Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Post-Mortem Status
               postmortemAsync.when(
                 data: (pm) {
                   final isDone = pm != null;
+
                   return Row(
                     children: [
                       Icon(
-                        isDone ? LucideIcons.checkCircle2 : LucideIcons.helpCircle,
+                        isDone
+                            ? LucideIcons.checkCircle2
+                            : LucideIcons.helpCircle,
                         size: 16,
-                        color: isDone ? ReforgeColors.success : ReforgeColors.warning,
+                        color: isDone
+                            ? ReforgeColors.success
+                            : ReforgeColors.warning,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        isDone ? 'Post-Mortem Saved' : 'Post-Mortem Pending',
+                        isDone
+                            ? 'Post-Mortem Saved'
+                            : 'Post-Mortem Pending',
                         style: ReforgeTypography.meta.copyWith(
-                          color: isDone ? ReforgeColors.success : ReforgeColors.warning,
+                          color: isDone
+                              ? ReforgeColors.success
+                              : ReforgeColors.warning,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   );
                 },
+
                 loading: () => const SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                ),
+
+                error: (_, _) => const Text(
+                  'Post-Mortem Status N/A',
+                  style: ReforgeTypography.meta,
                 ),
                 error: (_, _) => const Text('Post-Mortem Status N/A', style: ReforgeTypography.meta),
               ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.end,
+
+              const SizedBox(height: 12),
+
+              // Buttons - Left & Right
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   OutlinedButton.icon(
-                    onPressed: () => context.go('/reforge/${project.id}'),
-                    icon: const Icon(LucideIcons.flame, size: 16, color: ReforgeColors.forgeAccent),
-                    label: const Text('Reforge V2 🔥'),
+                    onPressed: () =>
+                        context.go('/reforge/${project.id}'),
+                    icon: const Icon(
+                      LucideIcons.flame,
+                      size: 16,
+                    ),
+                    label: const Text('Reforge V2'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: ReforgeColors.forgeAccent,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      side: const BorderSide(color: ReforgeColors.forgeAccent),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      side: const BorderSide(
+                        color: ReforgeColors.forgeAccent,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      textStyle: ReforgeTypography.buttonPrimary.copyWith(fontSize: 13),
+                      textStyle:
+                          ReforgeTypography.buttonPrimary.copyWith(
+                        fontSize: 13,
+                      ),
                     ),
                   ),
+
                   ElevatedButton.icon(
-                    onPressed: () => context.go('/postmortem/${project.id}'),
-                    icon: const Icon(LucideIcons.bookOpen, size: 16),
+                    onPressed: () =>
+                        context.go('/postmortem/${project.id}'),
+                    icon: const Icon(
+                      LucideIcons.bookOpen,
+                      size: 16,
+                    ),
                     label: const Text('Post-Mortem'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ReforgeColors.deepSlate,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      textStyle: ReforgeTypography.buttonPrimary.copyWith(fontSize: 13),
+                      textStyle:
+                          ReforgeTypography.buttonPrimary.copyWith(
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],

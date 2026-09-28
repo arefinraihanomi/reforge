@@ -68,7 +68,6 @@ class ReforgeShellScreen extends ConsumerWidget {
                   label: 'Ideas',
                   isSelected: currentIndex == 1,
                   onTap: () => ref.read(shellTabIndexProvider.notifier).state = 1,
-                  badge: true,
                 ),
                 _NavItem(
                   icon: LucideIcons.hammer,
@@ -227,7 +226,7 @@ class _HomeTab extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Good evening, $displayName', style: ReforgeTypography.greeting),
+                        Text('Hi, $displayName', style: ReforgeTypography.greeting),
                         const SizedBox(height: 4),
                         const Text(
                           'Keep building. Keep refining.',

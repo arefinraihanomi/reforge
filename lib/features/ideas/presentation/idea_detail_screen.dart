@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/shell_screen.dart';
 import '../../../core/network/ai_gateway_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
@@ -11,8 +14,8 @@ import '../../projects/presentation/convert_idea_dialog.dart';
 import 'idea_edit_sheet.dart';
 import 'ideas_notifier.dart';
 
-/// Detail screen for a single idea — shows full content, evolution stepper,
-/// workshop notes, and action buttons matching the reference design.
+/// Detail screen for a single idea — upgraded with sticky bottom actions,
+/// interactive stage stepper info, and polished empty/placeholder states.
 class IdeaDetailScreen extends ConsumerWidget {
   final String ideaId;
 
@@ -24,6 +27,63 @@ class IdeaDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: ReforgeColors.warmSurface,
+      appBar: AppBar(
+        backgroundColor: ReforgeColors.warmSurface,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(
+            LucideIcons.arrowLeft,
+            color: ReforgeColors.graphite,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Idea Details',
+          style: ReforgeTypography.bodyMedium,
+        ),
+        actions: [
+          ideaAsync.maybeWhen(
+            data: (idea) => idea.status == IdeaStatus.draft
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Center(
+                      child: Text(
+                        'Draft',
+                        style: ReforgeTypography.bodyMedium.copyWith(
+                          color: ReforgeColors.muted,
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            orElse: () => const SizedBox.shrink(),
+          ),
+          ideaAsync.maybeWhen(
+            data: (idea) => PopupMenuButton<String>(
+              icon: const Icon(
+                LucideIcons.ellipsisVertical,
+                size: 20,
+                color: ReforgeColors.graphite,
+              ),
+              onSelected: (value) => _handleMenuAction(context, ref, idea, value),
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'archive',
+                  child: Text('Archive Idea'),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text(
+                    'Delete',
+                    style: TextStyle(color: ReforgeColors.danger),
+                  ),
+                ),
+              ],
+            ),
+            orElse: () => const SizedBox.shrink(),
+          ),
+        ],
+      ),
       body: ideaAsync.when(
         data: (idea) => _IdeaDetailBody(idea: idea),
         loading: () => const Center(
@@ -53,124 +113,18 @@ class IdeaDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _IdeaDetailBody extends ConsumerWidget {
-  final Idea idea;
-  const _IdeaDetailBody({required this.idea});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return CustomScrollView(
-      slivers: [
-        // --- App Bar ---
-        SliverAppBar(
-          backgroundColor: ReforgeColors.warmSurface,
-          surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            icon: const Icon(
-              LucideIcons.arrowLeft,
-              color: ReforgeColors.graphite,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(
-            'Idea #${idea.ideaNumber.toString().padLeft(3, '0')}',
-            style: ReforgeTypography.bodyMedium,
-          ),
-          actions: [
-            Text(
-              idea.status == IdeaStatus.draft ? 'Draft' : '',
-              style: ReforgeTypography.bodyMedium.copyWith(
-                color: ReforgeColors.muted,
-              ),
-            ),
-            PopupMenuButton<String>(
-              icon: const Icon(
-                LucideIcons.ellipsisVertical,
-                size: 20,
-                color: ReforgeColors.graphite,
-              ),
-              onSelected: (value) => _handleMenuAction(context, ref, value),
-              itemBuilder: (_) => [
-                const PopupMenuItem(
-                  value: 'archive',
-                  child: Text('Archive Idea'),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Text(
-                    'Delete',
-                    style: TextStyle(color: ReforgeColors.danger),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-
-        // --- Content ---
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              // Header card: Status + Tags + Title + Meta
-              _HeaderCard(idea: idea),
-              const SizedBox(height: 20),
-
-              // Reforge Evolution Stepper
-              _EvolutionStepper(idea: idea),
-              const SizedBox(height: 20),
-
-              // Original Spark (Description)
-              if (idea.description != null && idea.description!.isNotEmpty)
-                _ContentSection(
-                  icon: LucideIcons.mapPin,
-                  iconColor: ReforgeColors.forgeAccent,
-                  title: 'Original Spark',
-                  content: idea.description!,
-                ),
-
-              // Why It Matters (Problem)
-              if (idea.problem != null && idea.problem!.isNotEmpty)
-                _ContentSection(
-                  icon: LucideIcons.target,
-                  iconColor: ReforgeColors.success,
-                  title: 'Why It Matters',
-                  content: idea.problem!,
-                ),
-
-              // Potential Direction
-              if (idea.potentialDirection != null &&
-                  idea.potentialDirection!.isNotEmpty)
-                _ContentSection(
-                  icon: LucideIcons.compass,
-                  iconColor: ReforgeColors.category,
-                  title: 'Potential Direction',
-                  content: idea.potentialDirection!,
-                ),
-
-              // Workshop Notes & Scratches
-              if (idea.workshopNotes.isNotEmpty)
-                _WorkshopNotesSection(notes: idea.workshopNotes),
-
-              const SizedBox(height: 24),
-
-              // Action buttons
-              _ActionButtons(idea: idea),
-              const SizedBox(height: 40),
-            ]),
-          ),
-        ),
-      ],
+      // --- Sticky Bottom Action Bar Added ---
+      bottomNavigationBar: ideaAsync.maybeWhen(
+        data: (idea) => _StickyBottomActionBar(idea: idea),
+        orElse: () => null,
+      ),
     );
   }
 
   void _handleMenuAction(
     BuildContext context,
     WidgetRef ref,
+    Idea idea,
     String action,
   ) async {
     switch (action) {
@@ -212,6 +166,58 @@ class _IdeaDetailBody extends ConsumerWidget {
   }
 }
 
+class _IdeaDetailBody extends StatelessWidget {
+  final Idea idea;
+  const _IdeaDetailBody({required this.idea});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+      children: [
+        // Header card: Status + Tags + Title + Meta
+        _HeaderCard(idea: idea),
+        const SizedBox(height: 20),
+
+        // Reforge Evolution Stepper (Interactive)
+        _EvolutionStepper(idea: idea),
+        const SizedBox(height: 20),
+
+        // Original Spark (Description)
+        _ContentSection(
+          icon: LucideIcons.mapPin,
+          iconColor: ReforgeColors.forgeAccent,
+          title: 'Original Spark',
+          content: idea.description,
+          emptyPlaceholder: 'No description provided yet. Tap edit to flesh out your idea spark!',
+        ),
+
+        // Why It Matters (Problem)
+        _ContentSection(
+          icon: LucideIcons.target,
+          iconColor: ReforgeColors.success,
+          title: 'Why It Matters',
+          content: idea.problem,
+          emptyPlaceholder: 'Define the core problem this idea solves to give it more weight.',
+        ),
+
+        // Potential Direction
+        _ContentSection(
+          icon: LucideIcons.compass,
+          iconColor: ReforgeColors.category,
+          title: 'Potential Direction',
+          content: idea.potentialDirection,
+          emptyPlaceholder: 'Add potential tech stacks, markets, or product directions.',
+        ),
+
+        // Workshop Notes & Scratches
+        if (idea.workshopNotes.isNotEmpty)
+          _WorkshopNotesSection(notes: idea.workshopNotes),
+      ],
+    );
+  }
+}
+
 // =============================================================================
 // Header Card
 // =============================================================================
@@ -228,20 +234,24 @@ class _HeaderCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: ReforgeColors.cardSurface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: ReforgeColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Status + Tag chips
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              // Status badge
               _StatusPill(status: idea.status),
-              // Tags
               for (final tag in idea.tags)
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -262,34 +272,38 @@ class _HeaderCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-
-          // Title
           Text(idea.title, style: ReforgeTypography.screenTitle),
           const SizedBox(height: 12),
-
-          // Meta row: Captured date | Iterations | Notes logged
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                LucideIcons.clock,
-                size: 14,
-                color: ReforgeColors.muted,
+              Row(
+                children: [
+                  const Icon(
+                    LucideIcons.clock,
+                    size: 14,
+                    color: ReforgeColors.muted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Captured $capturedDate',
+                    style: ReforgeTypography.meta,
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              Text('Captured $capturedDate', style: ReforgeTypography.meta),
-              const SizedBox(width: 16),
-              Text('•', style: ReforgeTypography.meta),
-              const SizedBox(width: 16),
-              Text(
-                '${idea.revisionsCount} ${idea.revisionsCount == 1 ? "iteration" : "iterations"}',
-                style: ReforgeTypography.meta,
-              ),
-              const SizedBox(width: 16),
-              Text('•', style: ReforgeTypography.meta),
-              const SizedBox(width: 16),
-              Text(
-                '${idea.workshopNotes.length} notes logged',
-                style: ReforgeTypography.meta,
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${idea.revisionsCount} ${idea.revisionsCount == 1 ? "iteration" : "iterations"}',
+                    style: ReforgeTypography.meta,
+                  ),
+                  Text(
+                    '${idea.workshopNotes.length} notes logged',
+                    style: ReforgeTypography.meta,
+                  ),
+                ],
               ),
             ],
           ),
@@ -364,7 +378,7 @@ class _StatusPill extends StatelessWidget {
 }
 
 // =============================================================================
-// Evolution Stepper
+// Evolution Stepper (Interactive with Tap Feedbacks)
 // =============================================================================
 
 class _EvolutionStepper extends StatelessWidget {
@@ -379,13 +393,12 @@ class _EvolutionStepper extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: ReforgeColors.cardSurface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: ReforgeColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -399,8 +412,6 @@ class _EvolutionStepper extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-
-          // Stage circles with connector lines
           Row(
             children: List.generate(IdeaStage.values.length, (index) {
               final stage = IdeaStage.values[index];
@@ -411,71 +422,83 @@ class _EvolutionStepper extends StatelessWidget {
               return Expanded(
                 child: Row(
                   children: [
-                    // Stage circle
-                    Column(
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isCompleted
-                                ? ReforgeColors.success
-                                : isCurrent
-                                ? ReforgeColors.forgeAccent
-                                : ReforgeColors.border,
-                            border: isCurrent
-                                ? Border.all(
-                                    color: ReforgeColors.forgeAccentLight,
-                                    width: 3,
-                                  )
-                                : null,
-                          ),
-                          child: isCompleted
-                              ? const Icon(
-                                  LucideIcons.check,
-                                  size: 14,
-                                  color: Colors.white,
-                                )
-                              : isCurrent
-                              ? const Icon(
-                                  Icons.circle,
-                                  size: 8,
-                                  color: Colors.white,
-                                )
-                              : const Icon(
-                                  Icons.circle,
-                                  size: 8,
-                                  color: ReforgeColors.muted,
-                                ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Stage: ${stage.label}'),
+                              duration: const Duration(seconds: 1),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isCompleted
+                                    ? ReforgeColors.success
+                                    : isCurrent
+                                    ? ReforgeColors.forgeAccent
+                                    : ReforgeColors.border,
+                                border: isCurrent
+                                    ? Border.all(
+                                        color: ReforgeColors.forgeAccentLight,
+                                        width: 3,
+                                      )
+                                    : null,
+                              ),
+                              child: isCompleted
+                                  ? const Icon(
+                                      LucideIcons.check,
+                                      size: 14,
+                                      color: Colors.white,
+                                    )
+                                  : isCurrent
+                                  ? const Icon(
+                                      Icons.circle,
+                                      size: 8,
+                                      color: Colors.white,
+                                    )
+                                  : const Icon(
+                                      Icons.circle,
+                                      size: 8,
+                                      color: ReforgeColors.muted,
+                                    ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              stage.label,
+                              textAlign: TextAlign.center,
+                              style: ReforgeTypography.meta.copyWith(
+                                fontWeight: isCurrent || isCompleted
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: isCurrent
+                                    ? ReforgeColors.forgeAccent
+                                    : isCompleted
+                                    ? ReforgeColors.success
+                                    : ReforgeColors.muted,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          stage.label,
-                          style: ReforgeTypography.meta.copyWith(
-                            fontWeight: isCurrent || isCompleted
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: isCurrent
-                                ? ReforgeColors.forgeAccent
-                                : isCompleted
-                                ? ReforgeColors.success
-                                : ReforgeColors.muted,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    // Connector line
                     if (!isLast)
-                      Expanded(
-                        child: Container(
-                          height: 2,
-                          margin: const EdgeInsets.only(bottom: 18),
-                          color: index < currentStageIndex
-                              ? ReforgeColors.success
-                              : ReforgeColors.border,
-                        ),
+                      Container(
+                        width: 12,
+                        height: 2,
+                        margin: const EdgeInsets.only(bottom: 18),
+                        color: index < currentStageIndex
+                            ? ReforgeColors.success
+                            : ReforgeColors.border,
                       ),
                   ],
                 ),
@@ -489,24 +512,28 @@ class _EvolutionStepper extends StatelessWidget {
 }
 
 // =============================================================================
-// Content Sections
+// Content Sections with Empty State Placeholders
 // =============================================================================
 
 class _ContentSection extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String title;
-  final String content;
+  final String? content;
+  final String emptyPlaceholder;
 
   const _ContentSection({
     required this.icon,
     required this.iconColor,
     required this.title,
     required this.content,
+    required this.emptyPlaceholder,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool isEmpty = content == null || content!.trim().isEmpty;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Container(
@@ -514,8 +541,10 @@ class _ContentSection extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: ReforgeColors.cardSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: ReforgeColors.border),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isEmpty ? ReforgeColors.border.withValues(alpha: 0.6) : ReforgeColors.border,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,9 +558,10 @@ class _ContentSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              content,
+              isEmpty ? emptyPlaceholder : content!,
               style: ReforgeTypography.body.copyWith(
-                color: ReforgeColors.graphite,
+                color: isEmpty ? ReforgeColors.muted : ReforgeColors.graphite,
+                fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
                 height: 1.6,
               ),
             ),
@@ -559,7 +589,7 @@ class _WorkshopNotesSection extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: ReforgeColors.cardSurface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: ReforgeColors.border),
         ),
         child: Column(
@@ -632,257 +662,126 @@ class _WorkshopNotesSection extends StatelessWidget {
 }
 
 // =============================================================================
-// Action Buttons
+// Sticky Bottom Action Bar (Keeps CTA always reachable)
 // =============================================================================
 
-class _ActionButtons extends ConsumerStatefulWidget {
+class _StickyBottomActionBar extends ConsumerWidget {
   final Idea idea;
-  const _ActionButtons({required this.idea});
+  const _StickyBottomActionBar({required this.idea});
 
   @override
-  ConsumerState<_ActionButtons> createState() => _ActionButtonsState();
-}
-
-class _ActionButtonsState extends ConsumerState<_ActionButtons> {
-  bool _aiLoading = false;
-  _AiIdeaReviewCard? _aiResult;
-
-  Future<void> _runAiReview() async {
-    setState(() {
-      _aiLoading = true;
-      _aiResult = null;
-    });
-    final service = ref.read(aiGatewayServiceProvider);
-    final result = await service.reviewIdea(
-      title: widget.idea.title,
-      description: widget.idea.description,
-      tags: widget.idea.tags.map((t) => t.name).toList(),
-    );
-    if (mounted) {
-      setState(() {
-        _aiLoading = false;
-        if (result != null) {
-          _aiResult = _AiIdeaReviewCard(
-            summary: result.summary,
-            risks: result.risks,
-            mvpCut: result.recommendedMvpCut,
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('AI review unavailable. Please enter details manually.'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // AI Advisory Card (non-blocking — shown if result available)
-        if (_aiResult != null) ...[
-          _aiResult!,
-          const SizedBox(height: 12),
-        ],
-
-        // AI Review Button
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _aiLoading ? null : _runAiReview,
-            icon: _aiLoading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: ReforgeColors.forgeAccent,
-                    ),
-                  )
-                : const Icon(LucideIcons.bot, size: 16, color: ReforgeColors.forgeAccent),
-            label: Text(
-              _aiLoading ? 'Reviewing with AI...' : 'AI Scope Review 🤖',
-              style: ReforgeTypography.bodyMedium.copyWith(
-                color: ReforgeColors.forgeAccent,
-              ),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ReforgeColors.forgeAccent,
-              side: const BorderSide(color: ReforgeColors.forgeAccent),
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Primary CTA: Turn into Project
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () {
-              ConvertIdeaDialog.show(context, widget.idea);
-            },
-            icon: const Icon(LucideIcons.hammer, size: 18),
-            label: const Text('Turn into Project →'),
-            style: FilledButton.styleFrom(
-              backgroundColor: ReforgeColors.forgeAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: ReforgeTypography.buttonPrimary,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Secondary actions
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => showIdeaEditSheet(context, widget.idea),
-                icon: const Icon(LucideIcons.penLine, size: 16),
-                label: const Text('Edit Idea'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: ReforgeColors.graphite,
-                  side: const BorderSide(color: ReforgeColors.border),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: ReforgeTypography.bodyMedium,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final success = await ref
-                      .read(ideasActionProvider.notifier)
-                      .archiveIdea(widget.idea.id);
-                  if (success && context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                icon: const Icon(LucideIcons.archive, size: 16),
-                label: const Text('Graveyard'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: ReforgeColors.graphite,
-                  side: const BorderSide(color: ReforgeColors.border),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: ReforgeTypography.bodyMedium,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-// =============================================================================
-// AI Idea Review Result Card
-// =============================================================================
-
-class _AiIdeaReviewCard extends StatelessWidget {
-  final String summary;
-  final List<String> risks;
-  final String mvpCut;
-
-  const _AiIdeaReviewCard({
-    required this.summary,
-    required this.risks,
-    required this.mvpCut,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       decoration: BoxDecoration(
-        color: ReforgeColors.forgeAccent.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: ReforgeColors.forgeAccent.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(LucideIcons.bot, size: 16, color: ReforgeColors.forgeAccent),
-              const SizedBox(width: 8),
-              Text(
-                'AI Scope Advisory',
-                style: ReforgeTypography.cardTitle.copyWith(
-                  color: ReforgeColors.forgeAccent,
-                  fontSize: 14,
-                ),
-              ),
-            ],
+        color: ReforgeColors.warmSurface,
+        border: const Border(
+          top: BorderSide(color: ReforgeColors.border),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
-          const SizedBox(height: 10),
-          Text(summary, style: ReforgeTypography.body),
-          if (risks.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              'Scope Risks',
-              style: ReforgeTypography.meta.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 4),
-            for (final risk in risks)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      LucideIcons.alertTriangle,
-                      size: 12,
-                      color: ReforgeColors.warning,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(child: Text(risk, style: ReforgeTypography.bodySmall)),
-                  ],
+        ],
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // AI Review Button (Commented out as requested, kept intact)
+            /*
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {},
+                icon: const Icon(LucideIcons.bot, size: 16, color: ReforgeColors.forgeAccent),
+                label: const Text('AI Scope Review 🤖', style: TextStyle(color: ReforgeColors.forgeAccent)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: ReforgeColors.forgeAccent),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-          ],
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: ReforgeColors.successBg,
-              borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 10),
+            */
+
+            // Primary CTA: Turn into Project
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  ConvertIdeaDialog.show(context, idea);
+                },
+                icon: const Icon(LucideIcons.hammer, size: 18),
+                label: const Text('Turn into Project →'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: ReforgeColors.forgeAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: ReforgeTypography.buttonPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Secondary actions row
+            Row(
               children: [
-                const Icon(LucideIcons.scissors, size: 14, color: ReforgeColors.success),
-                const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    'Recommended MVP Cut: $mvpCut',
-                    style: ReforgeTypography.bodySmall.copyWith(
-                      color: ReforgeColors.success,
+                  child: OutlinedButton.icon(
+                    onPressed: () => showIdeaEditSheet(context, idea),
+                    icon: const Icon(LucideIcons.penLine, size: 16),
+                    label: const Text('Edit Idea'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ReforgeColors.graphite,
+                      side: const BorderSide(color: ReforgeColors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: ReforgeTypography.bodyMedium,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final success = await ref
+                          .read(ideasActionProvider.notifier)
+                          .archiveIdea(idea.id);
+
+                      if (!success || !context.mounted) return;
+
+                      ref.read(shellTabIndexProvider.notifier).state = 3;
+                      if (context.canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                      context.go('/home');
+                    },
+                    icon: const Icon(LucideIcons.archive, size: 16),
+                    label: const Text('Graveyard'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ReforgeColors.graphite,
+                      side: const BorderSide(color: ReforgeColors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: ReforgeTypography.bodyMedium,
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
-
