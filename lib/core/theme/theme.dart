@@ -39,7 +39,9 @@ abstract final class ReforgeTheme {
         backgroundColor: ReforgeColors.warmSurface,
         foregroundColor: ReforgeColors.graphite,
         elevation: 0,
-        scrolledUnderElevation: 0,
+        scrolledUnderElevation: 1,
+        shadowColor: Color(0x1A000000), // very subtle shadow on scroll
+        surfaceTintColor: Colors.transparent,
         centerTitle: false,
         titleTextStyle: TextStyle(
           fontFamily: ReforgeTypography.fontFamily,

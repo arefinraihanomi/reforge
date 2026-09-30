@@ -36,6 +36,13 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
 
     return Scaffold(
       backgroundColor: ReforgeColors.warmSurface,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCaptureIdeaSheet(context),
+        backgroundColor: ReforgeColors.deepSlate,
+        foregroundColor: Colors.white,
+        icon: const Icon(LucideIcons.plus, size: 18),
+        label: const Text('Capture Spark'),
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,11 +301,7 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
                     },
                   );
                 },
-                loading: () => const Center(
-                  child: CircularProgressIndicator(
-                    color: ReforgeColors.forgeAccent,
-                  ),
-                ),
+                loading: () => const _IdeaSkeletonList(),
                 error: (error, _) => Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
@@ -334,11 +337,6 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCaptureIdeaSheet(context),
-        backgroundColor: ReforgeColors.forgeAccent,
-        child: const Icon(LucideIcons.plus, color: Colors.white),
       ),
     );
   }
@@ -478,25 +476,50 @@ class _FilterChip extends StatelessWidget {
 }
 
 /// Individual idea card in the list.
-class _IdeaCard extends StatelessWidget {
+class _IdeaCard extends StatefulWidget {
   final Idea idea;
   final VoidCallback onTap;
 
   const _IdeaCard({required this.idea, required this.onTap});
 
   @override
+  State<_IdeaCard> createState() => _IdeaCardState();
+}
+
+class _IdeaCardState extends State<_IdeaCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final idea = widget.idea;
     final timeAgo = _formatTimeAgo(idea.createdAt);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: ReforgeColors.cardSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: ReforgeColors.border),
-        ),
-        child: Column(
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: ReforgeColors.cardSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isHovered
+                  ? ReforgeColors.forgeAccent.withValues(alpha: 0.4)
+                  : ReforgeColors.border,
+            ),
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top: Tags + Status + Time
@@ -655,8 +678,9 @@ class _IdeaCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _formatTimeAgo(DateTime date) {
     final now = DateTime.now();
@@ -1062,5 +1086,114 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
       return;
     }
     setState(() => _selectedTagIds.add(tag.id));
+  }
+}
+
+/// Pulsing skeleton loading list for Idea Vault.
+class _IdeaSkeletonList extends StatefulWidget {
+  const _IdeaSkeletonList();
+
+  @override
+  State<_IdeaSkeletonList> createState() => _IdeaSkeletonListState();
+}
+
+class _IdeaSkeletonListState extends State<_IdeaSkeletonList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.3, end: 0.8).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+          itemCount: 4,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            return Container(
+              height: 110,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: ReforgeColors.cardSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: ReforgeColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: ReforgeColors.elevatedSurface.withValues(
+                            alpha: _animation.value,
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 60,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: ReforgeColors.elevatedSurface.withValues(
+                            alpha: _animation.value,
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: ReforgeColors.elevatedSurface.withValues(
+                        alpha: _animation.value,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 180,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: ReforgeColors.elevatedSurface.withValues(
+                        alpha: _animation.value,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }

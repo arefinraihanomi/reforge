@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/profile_screen.dart';
 import '../features/postmortem/presentation/postmortem_screen.dart';
 import '../features/projects/presentation/project_memory_screen.dart';
 import '../features/projects/presentation/project_workspace_screen.dart';
@@ -73,6 +74,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         builder: (context, state) => const ReforgeShellScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: '/projects/:id',
