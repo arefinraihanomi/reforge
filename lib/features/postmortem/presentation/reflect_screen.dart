@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -18,6 +20,9 @@ class ReflectScreen extends ConsumerStatefulWidget {
 
 class _ReflectScreenState extends ConsumerState<ReflectScreen> {
   String _selectedCategory = 'all';
+  String _searchQuery = '';
+  final Set<String> _pinnedLessonIds = {};
+  final TextEditingController _searchController = TextEditingController();
 
   static const _categories = [
     {'id': 'all', 'label': 'All Lessons'},
@@ -26,6 +31,12 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
     {'id': 'technical', 'label': 'Technical'},
     {'id': 'process', 'label': 'Process'},
   ];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
@@ -92,7 +103,44 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
                 ],
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              // Search Input Bar
+              TextField(
+                controller: _searchController,
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val.trim().toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search lessons, architecture rules, keywords...',
+                  hintStyle: ReforgeTypography.bodySmall,
+                  prefixIcon: const Icon(LucideIcons.search, size: 18, color: ReforgeColors.muted),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(LucideIcons.x, size: 16),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: ReforgeColors.cardSurface,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: ReforgeColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: ReforgeColors.border),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
 
               // Category Filter Chips
               SingleChildScrollView(
@@ -119,6 +167,7 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         onSelected: (_) {
+                          HapticFeedback.selectionClick();
                           setState(() {
                             _selectedCategory = cat['id']!;
                           });
@@ -129,7 +178,7 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               // Content List
               Expanded(
@@ -153,20 +202,46 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
                     ),
                   ),
                   data: (lessons) {
-                    final filteredLessons = _selectedCategory == 'all'
+                    var filtered = _selectedCategory == 'all'
                         ? lessons
                         : lessons.where((l) => l.category.toLowerCase() == _selectedCategory).toList();
 
-                    if (filteredLessons.isEmpty) {
+                    if (_searchQuery.isNotEmpty) {
+                      filtered = filtered
+                          .where((l) =>
+                              l.lesson.toLowerCase().contains(_searchQuery) ||
+                              l.category.toLowerCase().contains(_searchQuery))
+                          .toList();
+                    }
+
+                    if (filtered.isEmpty) {
                       return _buildEmptyState(context);
                     }
 
-                    return ListView.separated(
-                      itemCount: filteredLessons.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        return _buildLessonCard(filteredLessons[index]);
-                      },
+                    // Sort pinned lessons to the top
+                    filtered.sort((a, b) {
+                      final aPinned = _pinnedLessonIds.contains(a.id);
+                      final bPinned = _pinnedLessonIds.contains(b.id);
+                      if (aPinned && !bPinned) return -1;
+                      if (!aPinned && bPinned) return 1;
+                      return 0;
+                    });
+
+                    return Column(
+                      children: [
+                        // Stats Bar Summary Widget
+                        _buildStatsHeader(lessons),
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              return _buildLessonCard(filtered[index]);
+                            },
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -174,16 +249,6 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: ReforgeColors.forgeAccent,
-        foregroundColor: Colors.white,
-        icon: const Icon(LucideIcons.plus, size: 18),
-        label: const Text(
-          'Record Lesson',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-        ),
-        onPressed: () => _showAddLessonDialog(context),
       ),
     );
   }
@@ -399,15 +464,77 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
     );
   }
 
+  Widget _buildStatsHeader(List<ProjectLesson> lessons) {
+    final total = lessons.length;
+    final archCount = lessons.where((l) => l.category.toLowerCase() == 'architecture').length;
+    final scopeCount = lessons.where((l) => l.category.toLowerCase() == 'scope').length;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: ReforgeColors.cardSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ReforgeColors.border),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.bookOpen, size: 16, color: ReforgeColors.forgeAccent),
+              const SizedBox(width: 6),
+              Text(
+                '$total Lessons',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ReforgeColors.graphite),
+              ),
+            ],
+          ),
+          const SizedBox(
+            height: 14,
+            child: VerticalDivider(width: 1, color: ReforgeColors.border),
+          ),
+          Row(
+            children: [
+              const Icon(LucideIcons.layers, size: 16, color: ReforgeColors.warning),
+              const SizedBox(width: 6),
+              Text(
+                '$archCount Arch Rules',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ReforgeColors.graphite),
+              ),
+            ],
+          ),
+          const SizedBox(
+            height: 14,
+            child: VerticalDivider(width: 1, color: ReforgeColors.border),
+          ),
+          Row(
+            children: [
+              const Icon(LucideIcons.target, size: 16, color: Color(0xFF3B82F6)),
+              const SizedBox(width: 6),
+              Text(
+                '$scopeCount Scope Rules',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ReforgeColors.graphite),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLessonCard(ProjectLesson lesson) {
     final catColor = _getCategoryColor(lesson.category);
+    final isPinned = _pinnedLessonIds.contains(lesson.id);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: ReforgeColors.cardSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: ReforgeColors.border),
+        border: Border.all(
+          color: isPinned ? ReforgeColors.forgeAccent : ReforgeColors.border,
+          width: isPinned ? 1.5 : 1.0,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,25 +542,81 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: catColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  lesson.category.toUpperCase(),
-                  style: ReforgeTypography.badge.copyWith(
-                    color: catColor,
-                    fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: catColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      lesson.category.toUpperCase(),
+                      style: ReforgeTypography.badge.copyWith(
+                        color: catColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
+                  if (lesson.projectId != null && lesson.projectId!.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () => context.push('/projects/${lesson.projectId}'),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: ReforgeColors.warmSurface,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: ReforgeColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(LucideIcons.link, size: 10, color: ReforgeColors.muted),
+                            SizedBox(width: 4),
+                            Text(
+                              'Source Build',
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: ReforgeColors.graphite),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              if (lesson.createdAt != null)
-                Text(
-                  DateFormat.yMMMd().format(lesson.createdAt!),
-                  style: ReforgeTypography.meta.copyWith(fontSize: 11),
-                ),
+              Row(
+                children: [
+                  if (lesson.createdAt != null)
+                    Text(
+                      DateFormat.yMMMd().format(lesson.createdAt!),
+                      style: ReforgeTypography.meta.copyWith(fontSize: 11),
+                    ),
+                  const SizedBox(width: 6),
+                  InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      setState(() {
+                        if (isPinned) {
+                          _pinnedLessonIds.remove(lesson.id);
+                        } else {
+                          _pinnedLessonIds.add(lesson.id);
+                        }
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        isPinned ? LucideIcons.pin : LucideIcons.pin,
+                        size: 16,
+                        color: isPinned ? ReforgeColors.forgeAccent : ReforgeColors.muted.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -455,6 +638,72 @@ class _ReflectScreenState extends ConsumerState<ReflectScreen> {
                     color: ReforgeColors.deepSlate,
                   ),
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: ReforgeColors.border),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton.icon(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  ref.read(shellTabIndexProvider.notifier).selectTab(2);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Guideline ready to apply: "${lesson.lesson.substring(0, lesson.lesson.length > 30 ? 30 : lesson.lesson.length)}..."'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                icon: const Icon(LucideIcons.hammer, size: 14),
+                label: const Text('Apply to Build', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                style: TextButton.styleFrom(
+                  foregroundColor: ReforgeColors.forgeAccent,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Copy Rule',
+                    icon: const Icon(LucideIcons.copy, size: 15, color: ReforgeColors.muted),
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(6),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: lesson.lesson));
+                      HapticFeedback.lightImpact();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Lesson copied to clipboard.'),
+                          behavior: SnackBarBehavior.floating,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    tooltip: 'Share Takeaway',
+                    icon: const Icon(LucideIcons.share2, size: 15, color: ReforgeColors.muted),
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(6),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      Clipboard.setData(ClipboardData(text: 'Reforge Lesson [${lesson.category.toUpperCase()}]: ${lesson.lesson}'));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Takeaway formatted & copied for sharing!'),
+                          behavior: SnackBarBehavior.floating,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),

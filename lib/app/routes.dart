@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/profile_screen.dart';
+import '../features/ideas/presentation/idea_detail_screen.dart';
 import '../features/postmortem/presentation/postmortem_screen.dart';
 import '../features/projects/presentation/project_memory_screen.dart';
 import '../features/projects/presentation/project_workspace_screen.dart';
@@ -77,34 +78,41 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
+        builder: (context, state) => const ReforgeDesktopShell(child: ProfileScreen()),
       ),
       GoRoute(
         path: '/projects/:id',
         builder: (context, state) {
           final projectId = state.pathParameters['id'] ?? '';
-          return ProjectWorkspaceScreen(projectId: projectId);
+          return ReforgeDesktopShell(child: ProjectWorkspaceScreen(projectId: projectId));
         },
       ),
       GoRoute(
         path: '/projects/:id/memory',
         builder: (context, state) {
           final projectId = state.pathParameters['id'] ?? '';
-          return ProjectMemoryScreen(projectId: projectId);
+          return ReforgeDesktopShell(child: ProjectMemoryScreen(projectId: projectId));
         },
       ),
       GoRoute(
         path: '/postmortem/:projectId',
         builder: (context, state) {
           final projectId = state.pathParameters['projectId'] ?? '';
-          return PostmortemScreen(projectId: projectId);
+          return ReforgeDesktopShell(child: PostmortemScreen(projectId: projectId));
+        },
+      ),
+      GoRoute(
+        path: '/ideas/:id',
+        builder: (context, state) {
+          final ideaId = state.pathParameters['id'] ?? '';
+          return ReforgeDesktopShell(child: IdeaDetailScreen(ideaId: ideaId));
         },
       ),
       GoRoute(
         path: '/reforge/:sourceProjectId',
         builder: (context, state) {
           final sourceProjectId = state.pathParameters['sourceProjectId'] ?? '';
-          return ReforgeWizardScreen(sourceProjectId: sourceProjectId);
+          return ReforgeDesktopShell(child: ReforgeWizardScreen(sourceProjectId: sourceProjectId));
         },
       ),
     ],

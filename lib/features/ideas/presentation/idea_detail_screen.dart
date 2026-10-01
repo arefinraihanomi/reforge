@@ -34,7 +34,13 @@ class IdeaDetailScreen extends ConsumerWidget {
             LucideIcons.arrowLeft,
             color: ReforgeColors.graphite,
           ),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
         ),
         title: const Text('Idea Details', style: ReforgeTypography.bodyMedium),
         actions: [
@@ -169,6 +175,60 @@ class _IdeaDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 850;
+
+    if (isDesktop) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3,
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                _HeaderCard(idea: idea),
+                const SizedBox(height: 20),
+                _EvolutionStepper(idea: idea),
+                const SizedBox(height: 20),
+                _ContentSection(
+                  icon: LucideIcons.mapPin,
+                  iconColor: ReforgeColors.forgeAccent,
+                  title: 'Original Spark',
+                  content: idea.description,
+                  emptyPlaceholder: 'No description provided yet. Tap edit to flesh out your idea spark!',
+                ),
+                _ContentSection(
+                  icon: LucideIcons.target,
+                  iconColor: ReforgeColors.success,
+                  title: 'Why It Matters',
+                  content: idea.problem,
+                  emptyPlaceholder: 'Define the core problem this idea solves to give it more weight.',
+                ),
+              ],
+            ),
+          ),
+          const VerticalDivider(width: 1, thickness: 1, color: ReforgeColors.border),
+          Expanded(
+            flex: 2,
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                _ContentSection(
+                  icon: LucideIcons.compass,
+                  iconColor: ReforgeColors.category,
+                  title: 'Potential Direction',
+                  content: idea.potentialDirection,
+                  emptyPlaceholder: 'Add potential tech stacks, markets, or product directions.',
+                ),
+                if (idea.workshopNotes.isNotEmpty)
+                  _WorkshopNotesSection(notes: idea.workshopNotes),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
       children: [

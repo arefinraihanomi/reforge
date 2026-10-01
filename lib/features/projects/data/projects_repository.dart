@@ -339,6 +339,10 @@ class SupabaseProjectsRepository implements ProjectsRepository {
       final list = (response as List).cast<Map<String, dynamic>>();
       return list.map((json) => ProjectDecision.fromJson(json)).toList();
     } catch (e) {
+      final errStr = e.toString();
+      if (errStr.contains('PGRST205') || errStr.contains('project_decisions')) {
+        return [];
+      }
       throw AppFailure.fromException(e);
     }
   }
@@ -373,6 +377,20 @@ class SupabaseProjectsRepository implements ProjectsRepository {
 
       return ProjectDecision.fromJson(response);
     } catch (e) {
+      final errStr = e.toString();
+      if (errStr.contains('PGRST205') || errStr.contains('project_decisions')) {
+        // Fallback when remote migration has not been applied yet
+        return ProjectDecision(
+          id: 'local-dec-${DateTime.now().millisecondsSinceEpoch}',
+          projectId: projectId,
+          userId: _client.auth.currentUser?.id ?? 'local-user',
+          title: title.trim(),
+          decision: decision.trim(),
+          rationale: rationale?.trim(),
+          entryType: entryType,
+          createdAt: DateTime.now(),
+        );
+      }
       throw AppFailure.fromException(e);
     }
   }

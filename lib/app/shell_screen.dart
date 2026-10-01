@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/network/supabase_client.dart';
 import '../core/theme/colors.dart';
 import '../core/theme/typography.dart';
+import '../core/ui/onboarding_guide_dialog.dart';
 import '../features/auth/presentation/auth_notifier.dart';
 import '../features/auth/presentation/profile_notifier.dart';
 import '../features/graveyard/presentation/graveyard_screen.dart';
@@ -28,6 +29,41 @@ class ShellTabNotifier extends Notifier<int> {
 
 final shellTabIndexProvider =
     NotifierProvider<ShellTabNotifier, int>(ShellTabNotifier.new);
+
+/// Wrapper that renders the persistent Desktop Sidebar for nested routes like Workspace, Idea Details, and Profile.
+class ReforgeDesktopShell extends ConsumerWidget {
+  final Widget child;
+
+  const ReforgeDesktopShell({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width >= 800;
+    final currentIndex = ref.watch(shellTabIndexProvider);
+
+    if (!isDesktop) return child;
+
+    return Scaffold(
+      body: Row(
+        children: [
+          _DesktopSidebar(
+            currentIndex: currentIndex,
+            onSelectTab: (index) {
+              ref.read(shellTabIndexProvider.notifier).selectTab(index);
+              context.go('/home');
+            },
+          ),
+          const VerticalDivider(width: 1, thickness: 1, color: ReforgeColors.border),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+}
 
 /// Main shell screen displayed for authenticated users at `/home`.
 class ReforgeShellScreen extends ConsumerStatefulWidget {
@@ -124,54 +160,70 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: _screens),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: ReforgeColors.deepSlate,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        decoration: BoxDecoration(
+          color: ReforgeColors.deepSlate.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: SafeArea(
-          child: Align(
-            alignment: Alignment.center,
-            heightFactor: 1.0,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _NavItem(
-                      icon: LucideIcons.layoutGrid,
-                      label: 'Home',
-                      isSelected: currentIndex == 0,
-                      onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(0),
-                    ),
-                    _NavItem(
-                      icon: LucideIcons.lightbulb,
-                      label: 'Ideas',
-                      isSelected: currentIndex == 1,
-                      onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(1),
-                    ),
-                    _NavItem(
-                      icon: LucideIcons.hammer,
-                      label: 'Projects',
-                      isSelected: currentIndex == 2,
-                      onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(2),
-                    ),
-                    _NavItem(
-                      icon: LucideIcons.skull,
-                      label: 'Graveyard',
-                      isSelected: currentIndex == 3,
-                      onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(3),
-                    ),
-                    _NavItem(
-                      icon: LucideIcons.bookOpen,
-                      label: 'Reflect',
-                      isSelected: currentIndex == 4,
-                      onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(4),
-                    ),
-                  ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: LucideIcons.layoutGrid,
+                  label: 'Home',
+                  isSelected: currentIndex == 0,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(shellTabIndexProvider.notifier).selectTab(0);
+                  },
                 ),
-              ),
+                _NavItem(
+                  icon: LucideIcons.lightbulb,
+                  label: 'Ideas',
+                  isSelected: currentIndex == 1,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(shellTabIndexProvider.notifier).selectTab(1);
+                  },
+                ),
+                _NavItem(
+                  icon: LucideIcons.hammer,
+                  label: 'Projects',
+                  isSelected: currentIndex == 2,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(shellTabIndexProvider.notifier).selectTab(2);
+                  },
+                ),
+                _NavItem(
+                  icon: LucideIcons.skull,
+                  label: 'Graveyard',
+                  isSelected: currentIndex == 3,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(shellTabIndexProvider.notifier).selectTab(3);
+                  },
+                ),
+                _NavItem(
+                  icon: LucideIcons.bookOpen,
+                  label: 'Reflect',
+                  isSelected: currentIndex == 4,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(shellTabIndexProvider.notifier).selectTab(4);
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -179,6 +231,7 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
     );
   }
 }
+
 
 /// A desktop navigation sidebar widget.
 class _DesktopSidebar extends ConsumerWidget {
@@ -259,6 +312,15 @@ class _DesktopSidebar extends ConsumerWidget {
                     label: 'Reflection Vault',
                     isSelected: currentIndex == 4,
                     onTap: () => onSelectTab(4),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(color: ReforgeColors.border, height: 1),
+                  const SizedBox(height: 12),
+                  _SidebarNavItem(
+                    icon: LucideIcons.helpCircle,
+                    label: 'Reforge Guide 💡',
+                    isSelected: false,
+                    onTap: () => ReforgeOnboardingDialog.show(context, ref),
                   ),
                 ],
               ),
@@ -492,9 +554,7 @@ class _AnimatedTabBodyState extends State<_AnimatedTabBody>
   void didUpdateWidget(covariant _AnimatedTabBody oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentIndex != widget.currentIndex) {
-      // Fade out old tab
-      _controllers[oldWidget.currentIndex].reverse();
-      // Fade in new tab
+      _controllers[_previousIndex].reverse();
       _controllers[widget.currentIndex].forward();
       _previousIndex = widget.currentIndex;
     }
@@ -580,6 +640,11 @@ class _HomeTab extends ConsumerWidget {
                 ],
               ),
         actions: [
+          IconButton(
+            tooltip: 'Reforge Guide 💡',
+            icon: const Icon(LucideIcons.helpCircle, size: 20, color: ReforgeColors.forgeAccent),
+            onPressed: () => ReforgeOnboardingDialog.show(context, ref),
+          ),
           IconButton(
             tooltip: 'Reflection Vault',
             icon: const Icon(LucideIcons.bookOpen, size: 20),

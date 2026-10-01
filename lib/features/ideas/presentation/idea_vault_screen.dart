@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
+import '../../projects/presentation/convert_idea_dialog.dart';
 import '../models/idea.dart';
 import '../models/tag.dart';
-import 'idea_detail_screen.dart';
 import 'ideas_notifier.dart';
 
 /// Main Idea Vault screen displaying the list of ideas with search, filters, and stats.
@@ -20,6 +20,7 @@ class IdeaVaultScreen extends ConsumerStatefulWidget {
 
 class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
   final _searchController = TextEditingController();
+  bool _isGridView = false;
 
   @override
   void dispose() {
@@ -36,13 +37,6 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
 
     return Scaffold(
       backgroundColor: ReforgeColors.warmSurface,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCaptureIdeaSheet(context),
-        backgroundColor: ReforgeColors.deepSlate,
-        foregroundColor: Colors.white,
-        icon: const Icon(LucideIcons.plus, size: 18),
-        label: const Text('Capture Spark'),
-      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +83,7 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
 
             const SizedBox(height: 20),
 
-            // --- Title + Capture Button ---
+            // --- Title + Capture Button + View Switcher ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -111,22 +105,40 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
                       ],
                     ),
                   ),
-                  FilledButton.icon(
-                    onPressed: () => _showCaptureIdeaSheet(context),
-                    icon: const Icon(LucideIcons.plus, size: 18),
-                    label: const Text('Capture Idea'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: ReforgeColors.forgeAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: _isGridView ? 'Switch to List View' : 'Switch to Grid View',
+                        icon: Icon(
+                          _isGridView ? LucideIcons.list : LucideIcons.layoutGrid,
+                          size: 20,
+                          color: ReforgeColors.graphite,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isGridView = !_isGridView;
+                          });
+                        },
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 4),
+                      FilledButton.icon(
+                        onPressed: () => _showCaptureIdeaSheet(context),
+                        icon: const Icon(LucideIcons.plus, size: 18),
+                        label: const Text('Capture Idea'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: ReforgeColors.forgeAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          textStyle: ReforgeTypography.buttonPrimary,
+                        ),
                       ),
-                      textStyle: ReforgeTypography.buttonPrimary,
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -165,11 +177,6 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
                   ),
                   prefixIcon: const Icon(
                     LucideIcons.search,
-                    size: 20,
-                    color: ReforgeColors.muted,
-                  ),
-                  suffixIcon: const Icon(
-                    LucideIcons.mic,
                     size: 20,
                     color: ReforgeColors.muted,
                   ),
@@ -258,25 +265,6 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
                           ),
                         ) ??
                         const SizedBox.shrink(),
-                    // Settings icon at the end
-                    GestureDetector(
-                      onTap: () {}, // Future: advanced filter sheet
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        margin: const EdgeInsets.only(right: 20),
-                        decoration: BoxDecoration(
-                          color: ReforgeColors.cardSurface,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: ReforgeColors.border),
-                        ),
-                        child: const Icon(
-                          LucideIcons.slidersHorizontal,
-                          size: 16,
-                          color: ReforgeColors.muted,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -284,19 +272,64 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
 
             const SizedBox(height: 12),
 
-            // --- Ideas List ---
+            // --- Ideas List / Grid with Swipe Actions ---
             Expanded(
               child: ideasAsync.when(
                 data: (ideas) {
                   if (ideas.isEmpty) return const _EmptyVaultState();
+
+                  if (_isGridView) {
+                    return GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.85,
+                      ),
+                      itemCount: ideas.length,
+                      itemBuilder: (context, index) {
+                        return _IdeaCard(
+                          idea: ideas[index],
+                          onTap: () => _navigateToDetail(ideas[index].id),
+                        );
+                      },
+                    );
+                  }
+
                   return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
                     itemCount: ideas.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
-                      return _IdeaCard(
-                        idea: ideas[index],
-                        onTap: () => _navigateToDetail(ideas[index].id),
+                      final idea = ideas[index];
+                      return Dismissible(
+                        key: ValueKey(idea.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: ReforgeColors.forgeAccentBg,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: const [
+                              Icon(LucideIcons.hammer, color: ReforgeColors.forgeAccent, size: 20),
+                              SizedBox(width: 8),
+                              Text('Forge Project', style: TextStyle(color: ReforgeColors.forgeAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        confirmDismiss: (direction) async {
+                          _showConvertDialog(context, idea);
+                          return false;
+                        },
+                        child: _IdeaCard(
+                          idea: idea,
+                          onTap: () => _navigateToDetail(idea.id),
+                        ),
                       );
                     },
                   );
@@ -342,9 +375,11 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
   }
 
   void _navigateToDetail(String ideaId) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => IdeaDetailScreen(ideaId: ideaId)));
+    context.push('/ideas/$ideaId');
+  }
+
+  void _showConvertDialog(BuildContext context, Idea idea) {
+    ConvertIdeaDialog.show(context, idea);
   }
 
   void _showCaptureIdeaSheet(BuildContext context) {
@@ -489,10 +524,19 @@ class _IdeaCard extends StatefulWidget {
 class _IdeaCardState extends State<_IdeaCard> {
   bool _isHovered = false;
 
+  int _calculateReadiness(Idea idea) {
+    int score = 25; // Base score for having title
+    if (idea.description != null && idea.description!.trim().isNotEmpty) score += 25;
+    if (idea.hypothesis != null && idea.hypothesis!.trim().isNotEmpty) score += 25;
+    if (idea.problem != null && idea.problem!.trim().isNotEmpty) score += 25;
+    return score;
+  }
+
   @override
   Widget build(BuildContext context) {
     final idea = widget.idea;
     final timeAgo = _formatTimeAgo(idea.createdAt);
+    final readiness = _calculateReadiness(idea);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -522,7 +566,7 @@ class _IdeaCardState extends State<_IdeaCard> {
           child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top: Tags + Status + Time
+            // Top: Tags + Readiness Pill + Status + Time
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               child: Row(
@@ -535,6 +579,27 @@ class _IdeaCardState extends State<_IdeaCard> {
                         child: _TagBadge(tag: tag),
                       ),
                   ],
+                  // Readiness pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: readiness >= 75
+                          ? ReforgeColors.successBg
+                          : ReforgeColors.warningBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$readiness% Ready',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: readiness >= 75
+                            ? ReforgeColors.success
+                            : ReforgeColors.warning,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
                   // Status badge
                   _StatusBadge(status: idea.status),
                   const Spacer(),
@@ -655,16 +720,35 @@ class _IdeaCardState extends State<_IdeaCard> {
                   const Spacer(),
                   // CTA hint
                   if (idea.status == IdeaStatus.exploring ||
-                      idea.status == IdeaStatus.active)
-                    Text(
-                      idea.status == IdeaStatus.exploring
-                          ? 'Ready to Forge →'
-                          : 'Deepen →',
-                      style: ReforgeTypography.chip.copyWith(
-                        color: ReforgeColors.forgeAccent,
-                        fontWeight: FontWeight.w600,
+                      idea.status == IdeaStatus.active) ...[
+                    InkWell(
+                      onTap: () => ConvertIdeaDialog.show(context, idea),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: ReforgeColors.forgeAccentBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: ReforgeColors.forgeAccent.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(LucideIcons.hammer, size: 12, color: ReforgeColors.forgeAccent),
+                            SizedBox(width: 4),
+                            Text(
+                              'Forge ⚡',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: ReforgeColors.forgeAccent,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  ],
                   // Overflow menu
                   const SizedBox(width: 8),
                   const Icon(
@@ -796,7 +880,9 @@ class _QuickCaptureSheet extends ConsumerStatefulWidget {
 class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _problemController = TextEditingController();
   final Set<String> _selectedTagIds = {};
+  bool _isStructuredMode = false;
   bool _isExpanded = false;
   bool _isSubmitting = false;
 
@@ -804,7 +890,17 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _problemController.dispose();
     super.dispose();
+  }
+
+  void _recommendTags(String input, List<Tag> availableTags) {
+    final lower = input.toLowerCase();
+    for (final tag in availableTags) {
+      if (lower.contains(tag.name.toLowerCase())) {
+        _selectedTagIds.add(tag.id);
+      }
+    }
   }
 
   @override
@@ -833,23 +929,80 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Header
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(
-                LucideIcons.zap,
-                size: 20,
-                color: ReforgeColors.forgeAccent,
+              Row(
+                children: const [
+                  Icon(
+                    LucideIcons.zap,
+                    size: 20,
+                    color: ReforgeColors.forgeAccent,
+                  ),
+                  SizedBox(width: 8),
+                  Text('Capture Spark', style: ReforgeTypography.sectionTitle),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text('Quick Capture', style: ReforgeTypography.sectionTitle),
+              // Segmented Mode Switcher
+              Container(
+                decoration: BoxDecoration(
+                  color: ReforgeColors.warmSurface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: ReforgeColors.border),
+                ),
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: () => setState(() => _isStructuredMode = false),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: !_isStructuredMode ? ReforgeColors.deepSlate : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '⚡ Fast',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: !_isStructuredMode ? Colors.white : ReforgeColors.graphite,
+                          ),
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => setState(() => _isStructuredMode = true),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _isStructuredMode ? ReforgeColors.deepSlate : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '🎯 Structured',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: _isStructuredMode ? Colors.white : ReforgeColors.graphite,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            'Just a title is enough. Flesh it out later.',
+            _isStructuredMode
+                ? 'Define target problem & hypothesis before building.'
+                : 'Just a title is enough. Flesh it out later in under 2 minutes.',
             style: ReforgeTypography.body,
           ),
           const SizedBox(height: 16),
@@ -860,8 +1013,13 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
             style: ReforgeTypography.bodyMedium,
+            onChanged: (val) {
+              tagsAsync.whenData((tags) {
+                setState(() => _recommendTags(val, tags));
+              });
+            },
             decoration: InputDecoration(
-              hintText: 'What\'s the spark?',
+              hintText: 'What\'s the spark concept?',
               hintStyle: ReforgeTypography.body.copyWith(
                 color: ReforgeColors.subtle,
               ),
@@ -877,6 +1035,28 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
               ),
             ),
           ),
+
+          // Structured extra fields
+          if (_isStructuredMode) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _problemController,
+              maxLines: 2,
+              textCapitalization: TextCapitalization.sentences,
+              style: ReforgeTypography.bodyMedium,
+              decoration: InputDecoration(
+                hintText: 'Why it matters / Problem Statement',
+                hintStyle: ReforgeTypography.body.copyWith(color: ReforgeColors.subtle),
+                filled: true,
+                fillColor: ReforgeColors.elevatedSurface,
+                contentPadding: const EdgeInsets.all(14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
 
           // Expanded fields
           if (_isExpanded) ...[
