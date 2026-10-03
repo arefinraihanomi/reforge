@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../core/network/ai_gateway_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../projects/presentation/projects_notifier.dart';
@@ -29,7 +28,6 @@ class _PostmortemScreenState extends ConsumerState<PostmortemScreen> {
   final List<Map<String, String>> _lessons = [];
 
   bool _isSubmitting = false;
-  bool _isAiDrafting = false;
   String? _errorMessage;
 
   @override
@@ -67,53 +65,7 @@ class _PostmortemScreenState extends ConsumerState<PostmortemScreen> {
     });
   }
 
-  Future<void> _aiDraftPostmortem(String projectTitle, String? abandonReason, String? abandonNote) async {
-    if (_isAiDrafting) return;
-    setState(() => _isAiDrafting = true);
 
-    final service = ref.read(aiGatewayServiceProvider);
-    final result = await service.generatePostmortemDraft(
-      title: projectTitle,
-      abandonReason: abandonReason,
-      abandonNote: abandonNote,
-    );
-
-    if (mounted) {
-      if (result != null) {
-        setState(() {
-          if (_whatWentWrongController.text.isEmpty) {
-            _whatWentWrongController.text = result.whatWentWrong;
-          }
-          if (_whatWentWellController.text.isEmpty) {
-            _whatWentWellController.text = result.whatWentWell;
-          }
-          for (final lesson in result.suggestedLessons) {
-            if (!_lessons.any((l) => l['lesson'] == lesson['lesson'])) {
-              _lessons.add({
-                'lesson': lesson['lesson'] ?? '',
-                'category': lesson['category'] ?? 'architecture',
-              });
-            }
-          }
-          _isAiDrafting = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AI draft ready — review and edit before saving.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      } else {
-        setState(() => _isAiDrafting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AI draft unavailable. Please fill in the form manually.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
 
   Future<void> _submitPostmortem(String primaryReason) async {
     final wrongText = _whatWentWrongController.text.trim();
@@ -258,47 +210,7 @@ class _PostmortemScreenState extends ConsumerState<PostmortemScreen> {
                   const SizedBox(height: 12),
                 ],
 
-                // AI Draft Button — pre-fills form based on project history
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _isAiDrafting
-                        ? null
-                        : () => _aiDraftPostmortem(
-                              project.title,
-                              project.abandonReason,
-                              project.abandonNote,
-                            ),
-                    icon: _isAiDrafting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: ReforgeColors.forgeAccent,
-                            ),
-                          )
-                        : const Icon(
-                            LucideIcons.sparkles,
-                            size: 16,
-                            color: ReforgeColors.forgeAccent,
-                          ),
-                    label: Text(
-                      _isAiDrafting ? 'Drafting with AI...' : 'AI Draft Post-Mortem ✨',
-                      style: ReforgeTypography.bodyMedium.copyWith(
-                        color: ReforgeColors.forgeAccent,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ReforgeColors.forgeAccent,
-                      side: const BorderSide(color: ReforgeColors.forgeAccent),
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
                 // Postmortem Form Fields
                 Text(
@@ -501,24 +413,33 @@ class _PostmortemScreenState extends ConsumerState<PostmortemScreen> {
                 const SizedBox(height: 32),
 
                 // Submit Button
-                ElevatedButton.icon(
-                  onPressed: _isSubmitting ? null : () => _submitPostmortem(primaryReason),
-                  icon: _isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(LucideIcons.checkCircle2, size: 18),
-                  label: Text(_isSubmitting ? 'Preserving Knowledge...' : 'Complete Post-Mortem & Preserve Lessons'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ReforgeColors.deepSlate,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSubmitting ? null : () => _submitPostmortem(primaryReason),
+                    icon: _isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(LucideIcons.checkCircle2, size: 18),
+                    label: Flexible(
+                      child: Text(
+                        _isSubmitting ? 'Preserving Knowledge...' : 'Complete Post-Mortem & Preserve Lessons',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                    textStyle: ReforgeTypography.buttonPrimary,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ReforgeColors.deepSlate,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      textStyle: ReforgeTypography.buttonPrimary,
+                    ),
                   ),
                 ),
               ],

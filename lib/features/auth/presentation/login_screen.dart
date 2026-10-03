@@ -82,10 +82,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         Center(
           child: Image.asset(
             'assets/brand/app_logo.png',
-            height: 44,
-            errorBuilder: (context, error, stackTrace) => const Text(
-              'Reforge',
-              style: ReforgeTypography.screenTitle,
+            height: 48,
+            errorBuilder: (context, error, stackTrace) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: ReforgeColors.forgeAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    LucideIcons.flame,
+                    color: ReforgeColors.forgeAccent,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'Reforge',
+                  style: ReforgeTypography.screenTitle,
+                ),
+              ],
             ),
           ),
         ),
@@ -119,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 Text(
                   widget.isSignUp ? 'Create your account' : 'Welcome back',
-                  style: ReforgeTypography.cardTitle.copyWith(fontSize: 18),
+                  style: ReforgeTypography.cardTitle.copyWith(fontSize: 20),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -379,65 +397,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ReforgeColors.forgeAccent),
                     ),
                   ),
-
-                // Divider
-                Row(
-                  children: [
-                    const Expanded(child: Divider(color: ReforgeColors.border)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'OR',
-                        style: ReforgeTypography.meta.copyWith(
-                          color: ReforgeColors.deepSlate,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider(color: ReforgeColors.border)),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Google Sign-In Button
-                SizedBox(
-                  height: 46,
-                  child: OutlinedButton(
-                    onPressed: authState.isLoading
-                        ? null
-                        : () async {
-                            ref.read(authNotifierProvider.notifier).clearFeedback();
-                            await ref
-                                .read(authNotifierProvider.notifier)
-                                .signInWithGoogle();
-                          },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ReforgeColors.deepSlate,
-                      side: const BorderSide(color: ReforgeColors.border),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const _GoogleLogo(),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            'Continue with Google',
-                            overflow: TextOverflow.ellipsis,
-                            style: ReforgeTypography.buttonPrimary.copyWith(
-                              color: ReforgeColors.deepSlate,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -486,40 +445,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: isDesktop
                 ? Container(
-                    constraints: const BoxConstraints(maxWidth: 920),
+                    constraints: const BoxConstraints(maxWidth: 960),
                     decoration: BoxDecoration(
                       color: ReforgeColors.cardSurface,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: ReforgeColors.border),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
                         // Left Hero Branding Panel (Desktop)
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.all(40),
+                            padding: const EdgeInsets.all(48),
                             decoration: const BoxDecoration(
-                              color: ReforgeColors.deepSlate,
-                              borderRadius: BorderRadius.horizontal(left: Radius.circular(20)),
+                              gradient: LinearGradient(
+                                colors: [
+                                  ReforgeColors.deepSlate,
+                                  Color(0xFF1E293B),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.horizontal(left: Radius.circular(24)),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Image.asset(
-                                  'assets/brand/app_logo.png',
-                                  height: 48,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(
-                                    LucideIcons.flame,
-                                    color: ReforgeColors.forgeAccent,
-                                    size: 40,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: ReforgeColors.forgeAccent.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: ReforgeColors.forgeAccent.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(
+                                        LucideIcons.flame,
+                                        color: ReforgeColors.forgeAccent,
+                                        size: 14,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'CALM ENGINEERING STUDIO',
+                                        style: TextStyle(
+                                          color: ReforgeColors.forgeAccent,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 32),
+                                const SizedBox(height: 28),
                                 const Text(
                                   'Transform Stalled Projects Into Engineering Lessons.',
                                   style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
                                     color: Colors.white,
                                     height: 1.3,
                                   ),
@@ -529,25 +524,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   'Reforge treats an idea, its execution journey, reasons it was paused, and its resurrection (V2) as a continuous engineering lifecycle.',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: ReforgeColors.muted,
-                                    height: 1.5,
+                                    color: ReforgeColors.subtle,
+                                    height: 1.6,
                                   ),
                                 ),
-                                const SizedBox(height: 40),
-                                Row(
-                                  children: const [
-                                    Icon(LucideIcons.checkCircle2, size: 16, color: ReforgeColors.forgeAccent),
-                                    SizedBox(width: 8),
-                                    Text('Structured Post-Mortems', style: TextStyle(color: Colors.white, fontSize: 13)),
-                                  ],
+                                const SizedBox(height: 36),
+                                _HeroFeatureBadge(
+                                  icon: LucideIcons.sparkles,
+                                  title: 'Idea Vault & Readiness Score',
+                                  subtitle: 'Capture sparks & score MVP feasibility',
                                 ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: const [
-                                    Icon(LucideIcons.checkCircle2, size: 16, color: ReforgeColors.forgeAccent),
-                                    SizedBox(width: 8),
-                                    Text('V2 Resurrection Engine', style: TextStyle(color: Colors.white, fontSize: 13)),
-                                  ],
+                                const SizedBox(height: 14),
+                                _HeroFeatureBadge(
+                                  icon: LucideIcons.fileCheck2,
+                                  title: 'Structured Post-Mortems',
+                                  subtitle: 'Document root causes & preserve takeaways',
+                                ),
+                                const SizedBox(height: 14),
+                                _HeroFeatureBadge(
+                                  icon: LucideIcons.hammer,
+                                  title: 'V2 Resurrection Engine',
+                                  subtitle: 'Build tighter iterations backed by lessons',
                                 ),
                               ],
                             ),
@@ -556,7 +553,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         // Right Form Panel
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.all(32),
+                            padding: const EdgeInsets.all(40),
                             child: formContent,
                           ),
                         ),
@@ -574,76 +571,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-/// Custom painter widget rendering the official 4-color Google brand mark.
-class _GoogleLogo extends StatelessWidget {
-  const _GoogleLogo();
+class _HeroFeatureBadge extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _HeroFeatureBadge({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 20,
-      height: 20,
-      child: CustomPaint(
-        painter: _GoogleLogoPainter(),
-      ),
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Icon(icon, size: 18, color: ReforgeColors.forgeAccent),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: ReforgeColors.muted,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
-}
-
-class _GoogleLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
-    final center = Offset(w / 2, h / 2);
-    final radius = w / 2;
-
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.22;
-
-    // Blue arc
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
-      -0.5,
-      2.1,
-      false,
-      paint,
-    );
-
-    // Green arc
-    paint.color = const Color(0xFF34A853);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
-      1.6,
-      1.8,
-      false,
-      paint,
-    );
-
-    // Yellow arc
-    paint.color = const Color(0xFFFBBC05);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
-      3.4,
-      1.0,
-      false,
-      paint,
-    );
-
-    // Red arc
-    paint.color = const Color(0xFFEA4335);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
-      4.4,
-      1.4,
-      false,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 

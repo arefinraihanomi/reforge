@@ -147,35 +147,47 @@ class _ReforgeOnboardingDialogState extends State<ReforgeOnboardingDialog> {
             const Divider(color: ReforgeColors.border, height: 1),
             const SizedBox(height: 16),
 
-            // Description Body
-            Text(
-              step.description,
-              style: ReforgeTypography.body.copyWith(
-                height: 1.5,
-                color: ReforgeColors.graphite,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Principle Card
+            // Description Body & Core Principle Card
             Container(
-              padding: const EdgeInsets.all(12),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: ReforgeColors.warmSurface,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: ReforgeColors.border),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(LucideIcons.shieldCheck, size: 16, color: ReforgeColors.forgeAccent),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      step.corePrinciple,
-                      style: ReforgeTypography.bodySmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: ReforgeColors.deepSlate,
-                      ),
+                  Text(
+                    step.description,
+                    style: ReforgeTypography.body.copyWith(
+                      height: 1.5,
+                      color: ReforgeColors.graphite,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: step.iconColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: step.iconColor.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.shieldCheck, size: 16, color: step.iconColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            step.corePrinciple,
+                            style: ReforgeTypography.bodySmall.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: step.iconColor,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

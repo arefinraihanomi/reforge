@@ -77,7 +77,14 @@ class ProjectAnalyticsScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(LucideIcons.barChart2, size: 64, color: ReforgeColors.subtle),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: ReforgeColors.deepSlate.withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(LucideIcons.barChart2, size: 48, color: ReforgeColors.graphite),
+              ),
               const SizedBox(height: 16),
               Text('No Projects Found', style: ReforgeTypography.sectionTitle),
               const SizedBox(height: 8),
@@ -92,16 +99,76 @@ class ProjectAnalyticsScreen extends ConsumerWidget {
       );
     }
 
+    final isDesktop = MediaQuery.of(context).size.width > 700;
+
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       children: [
+        // Summary Header Banner
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                ReforgeColors.deepSlate,
+                ReforgeColors.deepSlate.withValues(alpha: 0.9),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: ReforgeColors.forgeAccent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  LucideIcons.activity,
+                  color: ReforgeColors.forgeAccent,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Engineering Health Pulse',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tracking ${summary.totalProjects} total projects with ${(summary.completionRate * 100).toStringAsFixed(0)}% completion rate',
+                      style: const TextStyle(
+                        color: ReforgeColors.subtle,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
         Text('Lifecycle Metrics', style: ReforgeTypography.sectionTitle),
         const SizedBox(height: 12),
         GridView.count(
-          crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+          crossAxisCount: isDesktop ? 4 : 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 1.3,
+          childAspectRatio: isDesktop ? 1.4 : 1.25,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
@@ -112,7 +179,7 @@ class ProjectAnalyticsScreen extends ConsumerWidget {
               accentColor: ReforgeColors.deepSlate,
             ),
             _MetricCard(
-              title: 'Active',
+              title: 'Active Builds',
               value: '${summary.activeProjects}',
               icon: LucideIcons.hammer,
               accentColor: ReforgeColors.forgeAccent,
@@ -133,31 +200,32 @@ class ProjectAnalyticsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
 
-        Text('Completion Rates', style: ReforgeTypography.sectionTitle),
+        Text('Execution Rates', style: ReforgeTypography.sectionTitle),
         const SizedBox(height: 12),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: ReforgeColors.border),
+        Container(
+          decoration: BoxDecoration(
+            color: ReforgeColors.cardSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: ReforgeColors.border),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _ProgressIndicatorRow(
-                  label: 'Project Completion Rate',
-                  percentage: summary.completionRate,
-                  color: ReforgeColors.success,
-                ),
-                const Divider(height: 24),
-                _ProgressIndicatorRow(
-                  label: 'Avg MVP Task Execution',
-                  percentage: summary.avgTaskCompletionRate,
-                  color: ReforgeColors.forgeAccent,
-                ),
-              ],
-            ),
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              _ProgressIndicatorRow(
+                label: 'Project Completion Rate',
+                percentage: summary.completionRate,
+                color: ReforgeColors.success,
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Divider(height: 1, color: ReforgeColors.border),
+              ),
+              _ProgressIndicatorRow(
+                label: 'Avg Task Execution Rate',
+                percentage: summary.avgTaskCompletionRate,
+                color: ReforgeColors.forgeAccent,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 24),
@@ -170,80 +238,94 @@ class ProjectAnalyticsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         if (summary.abandonmentReasons.isEmpty)
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: const BorderSide(color: ReforgeColors.border),
+          Container(
+            decoration: BoxDecoration(
+              color: ReforgeColors.cardSurface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: ReforgeColors.border),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.smile, color: ReforgeColors.success),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'No abandoned projects recorded yet! Keep forging forward.',
-                      style: ReforgeTypography.bodyMedium,
-                    ),
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: ReforgeColors.successBg,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
+                  child: const Icon(LucideIcons.smile, color: ReforgeColors.success, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    'No abandoned projects recorded yet! Keep forging forward.',
+                    style: ReforgeTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
             ),
           )
         else
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: const BorderSide(color: ReforgeColors.border),
+          Container(
+            decoration: BoxDecoration(
+              color: ReforgeColors.cardSurface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: ReforgeColors.border),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: summary.abandonmentReasons.entries.map((entry) {
-                  final reasonName = _formatReason(entry.key);
-                  final count = entry.value;
-                  final pct = summary.abandonedProjects > 0
-                      ? count / summary.abandonedProjects
-                      : 0.0;
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: summary.abandonmentReasons.entries.map((entry) {
+                final reasonName = _formatReason(entry.key);
+                final count = entry.value;
+                final pct = summary.abandonedProjects > 0
+                    ? count / summary.abandonedProjects
+                    : 0.0;
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              reasonName,
-                              style: ReforgeTypography.bodyMedium,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            reasonName,
+                            style: ReforgeTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: ReforgeColors.warmSurface,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: ReforgeColors.border),
                             ),
-                            Text(
+                            child: Text(
                               '$count project${count > 1 ? 's' : ''} (${(pct * 100).toStringAsFixed(0)}%)',
-                              style: ReforgeTypography.bodySmall,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: pct,
-                            minHeight: 8,
-                            backgroundColor: ReforgeColors.border,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              _getReasonColor(entry.key),
+                              style: ReforgeTypography.badge.copyWith(
+                                color: ReforgeColors.graphite,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: pct,
+                          minHeight: 8,
+                          backgroundColor: ReforgeColors.warmSurface,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _getReasonColor(entry.key),
+                          ),
                         ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
           ),
       ],

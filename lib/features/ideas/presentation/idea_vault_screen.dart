@@ -377,13 +377,17 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
                   if (ideas.isEmpty) return const _EmptyVaultState();
 
                   if (_isGridView) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final crossAxisCount = screenWidth > 600 ? 3 : 2;
+                    final aspectRatio = screenWidth > 600 ? 0.85 : 0.72;
+
                     return GridView.builder(
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 0.85,
+                        childAspectRatio: aspectRatio,
                       ),
                       itemCount: ideas.length,
                       itemBuilder: (context, index) {

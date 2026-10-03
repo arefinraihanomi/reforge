@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/local_storage/offline_decisions_cache.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import 'projects_notifier.dart';
@@ -87,7 +88,7 @@ class _LogDecisionDialogState extends ConsumerState<LogDecisionDialog> {
     });
 
     try {
-      await ref.read(projectsActionProvider.notifier).logDecision(
+      final item = await ref.read(projectsActionProvider.notifier).logDecision(
             projectId: widget.projectId,
             title: title,
             decision: decision,
@@ -95,6 +96,10 @@ class _LogDecisionDialogState extends ConsumerState<LogDecisionDialog> {
             entryType: _entryType,
             category: _category,
           );
+
+      if (item != null) {
+        await OfflineDecisionsCache.appendDecision(widget.projectId, item);
+      }
 
       if (mounted) {
         Navigator.of(context).pop();

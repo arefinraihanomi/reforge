@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../core/network/ai_gateway_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../postmortem/presentation/postmortem_notifier.dart';
@@ -33,7 +32,6 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
   final List<String> _initialTasks = [];
 
   bool _isSubmitting = false;
-  bool _isAiSuggesting = false;
   String? _errorMessage;
 
   @override
@@ -75,52 +73,7 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
     });
   }
 
-  Future<void> _aiSuggestReforgeStrategy(String ancestorTitle, String? abandonReason) async {
-    if (_isAiSuggesting) return;
-    setState(() => _isAiSuggesting = true);
 
-    final service = ref.read(aiGatewayServiceProvider);
-    final result = await service.suggestReforgeStrategy(
-      ancestorTitle: ancestorTitle,
-      abandonReason: abandonReason,
-      selectedLessons: _selectedLessons.toList(),
-    );
-
-    if (mounted) {
-      if (result != null) {
-        setState(() {
-          if (_v2ScopeController.text.isEmpty && result.tighterMvpScope.isNotEmpty) {
-            _v2ScopeController.text = result.tighterMvpScope;
-          }
-          if (_changesSummaryController.text.isEmpty && result.simplifications.isNotEmpty) {
-            _changesSummaryController.text = result.simplifications.join('\n• ');
-          }
-          for (final task in result.recommendedTasks) {
-            if (!_initialTasks.contains(task)) {
-              _initialTasks.add(task);
-            }
-          }
-          _isAiSuggesting = false;
-        });
-        // Move to Step 2 so user can review AI-prefilled scope
-        if (_currentStep == 0) setState(() => _currentStep = 1);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AI strategy ready — review in Step 2 before forging.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      } else {
-        setState(() => _isAiSuggesting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AI suggestion unavailable. Continue manually.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
 
   Future<void> _submitReforge() async {
     final title = _v2TitleController.text.trim();
@@ -207,28 +160,46 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
                     primary: ReforgeColors.forgeAccent,
                   ),
             ),
-            child: Stepper(
-              type: StepperType.horizontal,
-              currentStep: _currentStep,
-              onStepContinue: () {
-                if (_currentStep < 2) {
-                  setState(() => _currentStep++);
-                } else {
-                  _submitReforge();
-                }
-              },
-              onStepCancel: () {
-                if (_currentStep > 0) {
-                  setState(() => _currentStep--);
-                }
-              },
-              controlsBuilder: (context, details) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 24),
-                  child: Row(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Custom Step Progress Header
+                  Row(
+                    children: [
+                      _buildStepHeaderBadge(0, '1. Lessons'),
+                      const Expanded(child: Divider(indent: 8, endIndent: 8)),
+                      _buildStepHeaderBadge(1, '2. V2 Scope'),
+                      const Expanded(child: Divider(indent: 8, endIndent: 8)),
+                      _buildStepHeaderBadge(2, '3. Forge'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Active Step Content
+                  if (_currentStep == 0)
+                    _buildStep1(ancestor, lessonsAsync, postmortemAsync)
+                  else if (_currentStep == 1)
+                    _buildStep2()
+                  else
+                    _buildStep3(ancestor),
+
+                  const SizedBox(height: 32),
+
+                  // Bottom Controls Row
+                  Row(
                     children: [
                       ElevatedButton.icon(
-                        onPressed: _isSubmitting ? null : details.onStepContinue,
+                        onPressed: _isSubmitting
+                            ? null
+                            : () {
+                                if (_currentStep < 2) {
+                                  setState(() => _currentStep++);
+                                } else {
+                                  _submitReforge();
+                                }
+                              },
                         icon: _isSubmitting
                             ? const SizedBox(
                                 width: 16,
@@ -252,7 +223,11 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
                       if (_currentStep > 0) ...[
                         const SizedBox(width: 12),
                         OutlinedButton(
-                          onPressed: details.onStepCancel,
+                          onPressed: () {
+                            if (_currentStep > 0) {
+                              setState(() => _currentStep--);
+                            }
+                          },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ReforgeColors.graphite,
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -264,36 +239,37 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
                       ],
                     ],
                   ),
-                );
-              },
-              steps: [
-                // STEP 1: Lessons Review
-                Step(
-                  title: const Text('Lessons'),
-                  isActive: _currentStep >= 0,
-                  state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-                  content: _buildStep1(ancestor, lessonsAsync, postmortemAsync),
-                ),
-
-                // STEP 2: Refined Scope & Tasks
-                Step(
-                  title: const Text('V2 Scope'),
-                  isActive: _currentStep >= 1,
-                  state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-                  content: _buildStep2(),
-                ),
-
-                // STEP 3: Confirm & Forge
-                Step(
-                  title: const Text('Forge'),
-                  isActive: _currentStep >= 2,
-                  state: StepState.indexed,
-                  content: _buildStep3(ancestor),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildStepHeaderBadge(int stepIndex, String title) {
+    final isActive = _currentStep >= stepIndex;
+    final isCurrent = _currentStep == stepIndex;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isCurrent
+            ? ReforgeColors.forgeAccent
+            : (isActive ? ReforgeColors.deepSlate : ReforgeColors.warmSurface),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isActive ? Colors.transparent : ReforgeColors.border,
+        ),
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+          color: isActive ? Colors.white : ReforgeColors.graphite,
+        ),
       ),
     );
   }
@@ -347,7 +323,7 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
         const SizedBox(height: 12),
 
         lessonsAsync.when(
-          loading: () => const CircularProgressIndicator(color: ReforgeColors.forgeAccent),
+          loading: () => const SizedBox.shrink(),
           error: (_, _) => const Text('No lessons recorded yet.', style: ReforgeTypography.meta),
           data: (lessons) {
             if (lessons.isEmpty) {
@@ -386,44 +362,8 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
                   },
                 );
               }).toList(),
-            );         },
-        ),
-
-        const SizedBox(height: 16),
-
-        // AI Suggest Strategy button — pre-fills Step 2 scope & tasks
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _isAiSuggesting
-                ? null
-                : () => _aiSuggestReforgeStrategy(
-                      ancestor.title,
-                      ancestor.abandonReason,
-                    ),
-            icon: _isAiSuggesting
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: ReforgeColors.forgeAccent,
-                    ),
-                  )
-                : const Icon(LucideIcons.sparkles, size: 16, color: ReforgeColors.forgeAccent),
-            label: Text(
-              _isAiSuggesting ? 'Generating V2 Strategy...' : 'AI Suggest V2 Strategy ✨',
-              style: ReforgeTypography.bodyMedium.copyWith(
-                color: ReforgeColors.forgeAccent,
-              ),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ReforgeColors.forgeAccent,
-              side: const BorderSide(color: ReforgeColors.forgeAccent),
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );

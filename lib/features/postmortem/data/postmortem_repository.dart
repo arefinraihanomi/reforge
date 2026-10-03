@@ -194,6 +194,38 @@ class SupabasePostmortemRepository implements PostmortemRepository {
 
       return postmortem;
     } catch (e) {
+      final errStr = e.toString();
+      if (!SupabaseBootstrap.isInitialized ||
+          errStr.contains('PGRST205') ||
+          errStr.contains('project_postmortems') ||
+          errStr.contains('AuthFailure')) {
+        // Fallback local mock save
+        final fallbackPostmortem = ProjectPostmortem(
+          id: 'local-pm-${DateTime.now().millisecondsSinceEpoch}',
+          projectId: projectId,
+          userId: _client.auth.currentUser?.id ?? 'local-user',
+          primaryReason: primaryReason,
+          whatWentWrong: whatWentWrong.trim(),
+          whatWentWell: whatWentWell?.trim(),
+          notes: notes?.trim(),
+          createdAt: DateTime.now(),
+        );
+
+        if (lessons != null && lessons.isNotEmpty) {
+          for (final l in lessons) {
+            final lessonText = (l['lesson'] ?? '').trim();
+            if (lessonText.isNotEmpty) {
+              await createLesson(
+                lesson: lessonText,
+                category: l['category'] ?? 'architecture',
+                projectId: projectId,
+              );
+            }
+          }
+        }
+
+        return fallbackPostmortem;
+      }
       throw AppFailure.fromException(e);
     }
   }

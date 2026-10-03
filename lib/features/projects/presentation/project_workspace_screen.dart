@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -83,6 +84,20 @@ class _ProjectWorkspaceScreenState
           style: ReforgeTypography.screenTitle.copyWith(fontSize: 18),
         ),
         actions: [
+          projectAsync.maybeWhen(
+            data: (project) => IconButton(
+              icon: const Icon(LucideIcons.download, size: 18),
+              tooltip: 'Export Project Summary',
+              onPressed: () {
+                final md = '# Project: ${project.title}\n\n## MVP Scope\n${project.mvpScope ?? "N/A"}\n\n## Tasks\n${project.tasks.map((t) => "- [${t.isCompleted ? 'x' : ' '}] ${t.title}").join("\n")}';
+                Clipboard.setData(ClipboardData(text: md));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Project summary & tasks copied as Markdown!')),
+                );
+              },
+            ),
+            orElse: () => const SizedBox.shrink(),
+          ),
           IconButton(
             icon: const Icon(LucideIcons.refreshCw, size: 18),
             onPressed: () => ref.invalidate(

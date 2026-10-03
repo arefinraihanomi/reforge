@@ -71,6 +71,16 @@ class IdeaDetailScreen extends ConsumerWidget {
                   _handleMenuAction(context, ref, idea, value),
               itemBuilder: (_) => [
                 const PopupMenuItem(
+                  value: 'export',
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.download, size: 16, color: ReforgeColors.deepSlate),
+                      SizedBox(width: 8),
+                      Text('Export Idea (JSON/MD)'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
                   value: 'archive',
                   child: Text('Archive Idea'),
                 ),
@@ -131,6 +141,10 @@ class IdeaDetailScreen extends ConsumerWidget {
     String action,
   ) async {
     switch (action) {
+      case 'export':
+        final ideaJson = '{"id":"${idea.id}","title":"${idea.title}","description":"${idea.description ?? ""}","status":"${idea.status.name}"}';
+        _showExportOptions(context, title: idea.title, content: idea.description ?? '', jsonString: ideaJson);
+        break;
       case 'archive':
         final success = await ref
             .read(ideasActionProvider.notifier)
@@ -839,4 +853,54 @@ class _StickyBottomActionBar extends ConsumerWidget {
       ),
     );
   }
+}
+
+void _showExportOptions(
+  BuildContext context, {
+  required String title,
+  required String content,
+  required String jsonString,
+}) {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) => Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Export Content', style: ReforgeTypography.cardTitle),
+          const SizedBox(height: 4),
+          const Text('Copy exported data or save to clipboard', style: ReforgeTypography.meta),
+          const SizedBox(height: 20),
+          ListTile(
+            leading: const Icon(LucideIcons.fileText, color: ReforgeColors.forgeAccent),
+            title: const Text('Copy as Markdown (.md)'),
+            onTap: () {
+              final md = '# $title\n\n$content\n';
+              Clipboard.setData(ClipboardData(text: md));
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Markdown copied to clipboard!')),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(LucideIcons.code, color: ReforgeColors.deepSlate),
+            title: const Text('Copy as JSON (.json)'),
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: jsonString));
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('JSON copied to clipboard!')),
+              );
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 }

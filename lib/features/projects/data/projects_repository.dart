@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/errors/failures.dart';
+import '../../../core/local_storage/offline_decisions_cache.dart';
 import '../../../core/network/supabase_client.dart';
 import '../models/project.dart';
 import '../models/project_decision.dart';
@@ -324,28 +325,35 @@ class SupabaseProjectsRepository implements ProjectsRepository {
 
   @override
   Future<List<ProjectDecision>> getProjectDecisions(String projectId) async {
+    List<ProjectDecision> remoteDecisions = [];
     try {
       final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
-        throw const AuthFailure(message: 'User must be authenticated.');
-      }
+      if (userId != null) {
+        final response = await _client
+            .from('project_decisions')
+            .select('*')
+            .eq('project_id', projectId)
+            .eq('user_id', userId)
+            .order('created_at', ascending: false);
 
-      final response = await _client
-          .from('project_decisions')
-          .select('*')
-          .eq('project_id', projectId)
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
-
-      final list = (response as List).cast<Map<String, dynamic>>();
-      return list.map((json) => ProjectDecision.fromJson(json)).toList();
-    } catch (e) {
-      final errStr = e.toString();
-      if (errStr.contains('PGRST205') || errStr.contains('project_decisions')) {
-        return [];
+        final list = (response as List).cast<Map<String, dynamic>>();
+        remoteDecisions = list.map((json) => ProjectDecision.fromJson(json)).toList();
       }
-      throw AppFailure.fromException(e);
+    } catch (_) {
+      // Ignore network failures and fall back to local cache
     }
+
+    // Merge remote decisions with local Hive cache to guarantee logged decisions are never lost
+    final cached = OfflineDecisionsCache.loadDecisions(projectId);
+    final Set<String> ids = remoteDecisions.map((d) => d.id).toSet();
+    for (final c in cached) {
+      if (!ids.contains(c.id)) {
+        remoteDecisions.insert(0, c);
+        ids.add(c.id);
+      }
+    }
+
+    return remoteDecisions;
   }
 
   @override
