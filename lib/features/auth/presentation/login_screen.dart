@@ -379,6 +379,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                // Divider
+                Row(
+                  children: [
+                    const Expanded(child: Divider(color: ReforgeColors.border)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'or',
+                        style: ReforgeTypography.meta,
+                      ),
+                    ),
+                    const Expanded(child: Divider(color: ReforgeColors.border)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Google Sign-In Button
+                SizedBox(
+                  height: 46,
+                  child: OutlinedButton.icon(
+                    onPressed: authState.isLoading
+                        ? null
+                        : () async {
+                            await ref
+                                .read(authNotifierProvider.notifier)
+                                .signInWithGoogle();
+                          },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: ReforgeColors.border),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(LucideIcons.globe, size: 18),
+                    label: const Text(
+                      'Continue with Google',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 14),
 
                 // Fast Demo Mode Sign-In Button

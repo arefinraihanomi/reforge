@@ -359,8 +359,8 @@ class _GraveyardSkeletonLoader extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       itemCount: 4,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, __) => const _GraveyardSkeletonCard(),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (_, _) => const _GraveyardSkeletonCard(),
     );
   }
 }

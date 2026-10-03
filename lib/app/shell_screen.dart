@@ -468,12 +468,16 @@ class _SidebarNavItem extends StatelessWidget {
                           color: iconColor,
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: textColor,
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                              color: textColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -1145,6 +1149,16 @@ class _HomeTab extends ConsumerWidget {
                                     'Keep building. Keep refining.',
                                     style: ReforgeTypography.body,
                                   ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'FOUNDATION ONLINE',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                      color: ReforgeColors.forgeAccent,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -1164,7 +1178,7 @@ class _HomeTab extends ConsumerWidget {
                                   const Icon(Icons.circle, size: 8, color: ReforgeColors.success),
                                   const SizedBox(width: 6),
                                   Text(
-                                    SupabaseBootstrap.isInitialized ? 'Workshop Active' : 'Workshop Active (Local)',
+                                    'Workshop Active',
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
