@@ -270,7 +270,105 @@ class _IdeaVaultScreenState extends ConsumerState<IdeaVaultScreen> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            // --- AND/OR Mode + Sort Row ---
+            if (filter.selectedTagIds.length > 1 || true) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    // AND/OR toggle (show only when ≥2 tags selected)
+                    if (filter.selectedTagIds.length >= 2) ...[
+                      GestureDetector(
+                        onTap: () => ref.read(ideasFilterProvider.notifier).toggleTagFilterMode(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: filter.tagFilterMode == TagFilterMode.and
+                                ? ReforgeColors.deepSlate
+                                : ReforgeColors.cardSurface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: filter.tagFilterMode == TagFilterMode.and
+                                  ? ReforgeColors.deepSlate
+                                  : ReforgeColors.border,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.gitMerge,
+                                size: 13,
+                                color: filter.tagFilterMode == TagFilterMode.and
+                                    ? Colors.white
+                                    : ReforgeColors.muted,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                filter.tagFilterMode == TagFilterMode.and ? 'AND mode' : 'OR mode',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: filter.tagFilterMode == TagFilterMode.and
+                                      ? Colors.white
+                                      : ReforgeColors.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    const Spacer(),
+                    // Sort dropdown
+                    PopupMenuButton<IdeaSortBy>(
+                      onSelected: (sortBy) =>
+                          ref.read(ideasFilterProvider.notifier).setSortBy(sortBy),
+                      itemBuilder: (context) => IdeaSortBy.values
+                          .map(
+                            (s) => PopupMenuItem(
+                              value: s,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    s == filter.sortBy ? LucideIcons.check : LucideIcons.arrowUpDown,
+                                    size: 14,
+                                    color: s == filter.sortBy
+                                        ? ReforgeColors.forgeAccent
+                                        : ReforgeColors.muted,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(s.label),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: ReforgeColors.cardSurface,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: ReforgeColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(LucideIcons.arrowUpDown, size: 13, color: ReforgeColors.muted),
+                            const SizedBox(width: 5),
+                            Text(
+                              filter.sortBy.label,
+                              style: const TextStyle(fontSize: 11, color: ReforgeColors.muted, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // --- Ideas List / Grid with Swipe Actions ---
             Expanded(

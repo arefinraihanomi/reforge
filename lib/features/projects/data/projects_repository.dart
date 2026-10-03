@@ -40,6 +40,7 @@ abstract class ProjectsRepository {
     required String decision,
     String? rationale,
     String entryType = 'decision',
+    String category = 'Other',
   });
   Future<void> deleteDecision(String decisionId);
 }
@@ -354,6 +355,7 @@ class SupabaseProjectsRepository implements ProjectsRepository {
     required String decision,
     String? rationale,
     String entryType = 'decision',
+    String category = 'Other',
   }) async {
     try {
       final userId = _client.auth.currentUser?.id;
@@ -371,6 +373,7 @@ class SupabaseProjectsRepository implements ProjectsRepository {
             if (rationale != null && rationale.trim().isNotEmpty)
               'rationale': rationale.trim(),
             'entry_type': entryType,
+            'category': category,
           })
           .select()
           .single();
@@ -388,6 +391,7 @@ class SupabaseProjectsRepository implements ProjectsRepository {
           decision: decision.trim(),
           rationale: rationale?.trim(),
           entryType: entryType,
+          category: category,
           createdAt: DateTime.now(),
         );
       }

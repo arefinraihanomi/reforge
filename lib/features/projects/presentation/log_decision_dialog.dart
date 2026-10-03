@@ -41,8 +41,18 @@ class _LogDecisionDialogState extends ConsumerState<LogDecisionDialog> {
   late final TextEditingController _decisionController;
   late final TextEditingController _rationaleController;
   late String _entryType;
+  String _category = 'Other';
   bool _isSubmitting = false;
   String? _errorMessage;
+
+  static const List<String> _categories = [
+    'Architecture',
+    'Database',
+    'UI/UX',
+    'Scope',
+    'DevOps',
+    'Other',
+  ];
 
   @override
   void initState() {
@@ -83,6 +93,7 @@ class _LogDecisionDialogState extends ConsumerState<LogDecisionDialog> {
             decision: decision,
             rationale: _rationaleController.text.trim(),
             entryType: _entryType,
+            category: _category,
           );
 
       if (mounted) {
@@ -209,6 +220,45 @@ class _LogDecisionDialogState extends ConsumerState<LogDecisionDialog> {
                       const SizedBox(width: 8),
                       _buildTypePill('note', 'Note', LucideIcons.fileText),
                     ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Category Selector
+                  Text(
+                    'Category',
+                    style: ReforgeTypography.cardTitle.copyWith(fontSize: 14),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: _categories.map((cat) {
+                      final isSelected = _category == cat;
+                      return InkWell(
+                        onTap: () => setState(() => _category = cat),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected ? ReforgeColors.categoryBg : ReforgeColors.cardSurface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected ? ReforgeColors.category : ReforgeColors.border,
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                              color: isSelected ? ReforgeColors.category : ReforgeColors.muted,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
 
                   const SizedBox(height: 16),

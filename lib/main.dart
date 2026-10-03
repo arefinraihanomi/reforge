@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reforge/app/routes.dart';
+import 'package:reforge/core/local_storage/local_storage_service.dart';
 import 'package:reforge/core/network/supabase_client.dart';
 import 'package:reforge/core/theme/theme.dart';
 
@@ -8,6 +9,9 @@ export 'app/shell_screen.dart' show ReforgeShellScreen;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive local storage for offline-first caching
+  await LocalStorageService.init();
 
   // Initialize Supabase & environment configuration with safe fallback
   await SupabaseBootstrap.initialize();

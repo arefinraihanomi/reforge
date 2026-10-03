@@ -9,6 +9,7 @@ class ProjectDecision {
   final String decision;
   final String? rationale;
   final String entryType; // 'decision', 'blocker', 'note'
+  final String category;  // 'Architecture', 'Database', 'UI/UX', 'Scope', 'DevOps', 'Other'
   final DateTime? createdAt;
 
   const ProjectDecision({
@@ -19,6 +20,7 @@ class ProjectDecision {
     required this.decision,
     this.rationale,
     this.entryType = 'decision',
+    this.category = 'Other',
     this.createdAt,
   });
 
@@ -34,6 +36,7 @@ class ProjectDecision {
     String? decision,
     String? rationale,
     String? entryType,
+    String? category,
     DateTime? createdAt,
   }) {
     return ProjectDecision(
@@ -44,6 +47,7 @@ class ProjectDecision {
       decision: decision ?? this.decision,
       rationale: rationale ?? this.rationale,
       entryType: entryType ?? this.entryType,
+      category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -57,6 +61,7 @@ class ProjectDecision {
       decision: json['decision'] as String? ?? '',
       rationale: json['rationale'] as String?,
       entryType: json['entry_type'] as String? ?? 'decision',
+      category: json['category'] as String? ?? 'Other',
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -72,6 +77,7 @@ class ProjectDecision {
       'decision': decision,
       if (rationale != null) 'rationale': rationale,
       'entry_type': entryType,
+      'category': category,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
   }

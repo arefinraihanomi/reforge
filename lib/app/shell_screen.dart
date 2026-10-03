@@ -16,6 +16,7 @@ import '../features/ideas/presentation/idea_vault_screen.dart';
 import '../features/ideas/presentation/ideas_notifier.dart';
 import '../features/postmortem/presentation/postmortem_notifier.dart';
 import '../features/postmortem/presentation/reflect_screen.dart';
+import '../features/projects/presentation/project_analytics_screen.dart';
 import '../features/projects/presentation/projects_list_screen.dart';
 import '../features/projects/presentation/projects_notifier.dart';
 
@@ -85,6 +86,7 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
     ProjectsListScreen(),
     GraveyardScreen(),
     ReflectScreen(),
+    ProjectAnalyticsScreen(),
   ];
 
   @override
@@ -126,6 +128,7 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
                 LogicalKeyboardKey.digit3: 2,
                 LogicalKeyboardKey.digit4: 3,
                 LogicalKeyboardKey.digit5: 4,
+                LogicalKeyboardKey.digit6: 5,
               };
               final targetTab = tabKeys[event.logicalKey];
               if (targetTab != null) {
@@ -223,6 +226,15 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
                     ref.read(shellTabIndexProvider.notifier).selectTab(4);
                   },
                 ),
+                _NavItem(
+                  icon: LucideIcons.barChart2,
+                  label: 'Analytics',
+                  isSelected: currentIndex == 5,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(shellTabIndexProvider.notifier).selectTab(5);
+                  },
+                ),
               ],
             ),
           ),
@@ -312,6 +324,12 @@ class _DesktopSidebar extends ConsumerWidget {
                     label: 'Reflection Vault',
                     isSelected: currentIndex == 4,
                     onTap: () => onSelectTab(4),
+                  ),
+                  _SidebarNavItem(
+                    icon: LucideIcons.barChart2,
+                    label: 'Analytics',
+                    isSelected: currentIndex == 5,
+                    onTap: () => onSelectTab(5),
                   ),
                   const SizedBox(height: 12),
                   const Divider(color: ReforgeColors.border, height: 1),

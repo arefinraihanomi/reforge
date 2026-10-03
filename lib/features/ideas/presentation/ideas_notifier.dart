@@ -5,28 +5,60 @@ import '../data/ideas_repository.dart';
 import '../models/idea.dart';
 import '../models/tag.dart';
 
+/// Sort order for the Idea Vault list.
+enum IdeaSortBy {
+  newestFirst,
+  oldestFirst,
+  alphabetical,
+  statusGrouped;
+
+  String get label {
+    switch (this) {
+      case IdeaSortBy.newestFirst:
+        return 'Newest First';
+      case IdeaSortBy.oldestFirst:
+        return 'Oldest First';
+      case IdeaSortBy.alphabetical:
+        return 'A → Z';
+      case IdeaSortBy.statusGrouped:
+        return 'By Status';
+    }
+  }
+}
+
+/// Tag filter mode: whether ALL selected tags must match (AND) or ANY (OR).
+enum TagFilterMode { and, or }
+
 /// Filter state for the Idea Vault list screen.
 class IdeasFilter {
   final IdeaStatus? status;
   final Set<String> selectedTagIds;
   final String searchQuery;
+  final TagFilterMode tagFilterMode;
+  final IdeaSortBy sortBy;
 
   const IdeasFilter({
     this.status,
     this.selectedTagIds = const {},
     this.searchQuery = '',
+    this.tagFilterMode = TagFilterMode.or,
+    this.sortBy = IdeaSortBy.newestFirst,
   });
 
   IdeasFilter copyWith({
     IdeaStatus? status,
     Set<String>? selectedTagIds,
     String? searchQuery,
+    TagFilterMode? tagFilterMode,
+    IdeaSortBy? sortBy,
     bool clearStatus = false,
   }) {
     return IdeasFilter(
       status: clearStatus ? null : (status ?? this.status),
       selectedTagIds: selectedTagIds ?? this.selectedTagIds,
       searchQuery: searchQuery ?? this.searchQuery,
+      tagFilterMode: tagFilterMode ?? this.tagFilterMode,
+      sortBy: sortBy ?? this.sortBy,
     );
   }
 }
@@ -41,7 +73,6 @@ class IdeasFilterNotifier extends Notifier<IdeasFilter> {
 
   void setStatus(IdeaStatus? status) {
     if (status == state.status) {
-      // Toggle off
       state = state.copyWith(clearStatus: true);
     } else {
       state = state.copyWith(status: status);
@@ -62,6 +93,18 @@ class IdeasFilterNotifier extends Notifier<IdeasFilter> {
     state = state.copyWith(searchQuery: query);
   }
 
+  void toggleTagFilterMode() {
+    state = state.copyWith(
+      tagFilterMode: state.tagFilterMode == TagFilterMode.or
+          ? TagFilterMode.and
+          : TagFilterMode.or,
+    );
+  }
+
+  void setSortBy(IdeaSortBy sortBy) {
+    state = state.copyWith(sortBy: sortBy);
+  }
+
   void clearAll() {
     state = const IdeasFilter();
   }
@@ -72,14 +115,43 @@ final ideasListProvider = FutureProvider.autoDispose<List<Idea>>((ref) async {
   final repository = ref.watch(ideasRepositoryProvider);
   final filter = ref.watch(ideasFilterProvider);
 
-  return repository.listIdeas(
+  // Fetch raw list — server handles status and search; tag filtering may be client-side
+  var ideas = await repository.listIdeas(
     status: filter.status,
-    tagIds: filter.selectedTagIds.isNotEmpty
+    tagIds: filter.selectedTagIds.isNotEmpty && filter.tagFilterMode == TagFilterMode.or
         ? filter.selectedTagIds.toList()
         : null,
-    searchQuery:
-        filter.searchQuery.isNotEmpty ? filter.searchQuery : null,
+    searchQuery: filter.searchQuery.isNotEmpty ? filter.searchQuery : null,
   );
+
+  // AND-mode: keep only ideas that have ALL selected tags
+  if (filter.selectedTagIds.isNotEmpty && filter.tagFilterMode == TagFilterMode.and) {
+    ideas = ideas.where((idea) {
+      final ideaTagIds = idea.tags.map((t) => t.id).toSet();
+      return filter.selectedTagIds.every((tagId) => ideaTagIds.contains(tagId));
+    }).toList();
+  }
+
+  // Client-side sort
+  switch (filter.sortBy) {
+    case IdeaSortBy.newestFirst:
+      ideas.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    case IdeaSortBy.oldestFirst:
+      ideas.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    case IdeaSortBy.alphabetical:
+      ideas.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    case IdeaSortBy.statusGrouped:
+      final order = {
+        IdeaStatus.building: 0,
+        IdeaStatus.exploring: 1,
+        IdeaStatus.active: 2,
+        IdeaStatus.archived: 3,
+        IdeaStatus.converted: 4,
+      };
+      ideas.sort((a, b) => (order[a.status] ?? 5).compareTo(order[b.status] ?? 5));
+  }
+
+  return ideas;
 });
 
 /// Fetches a single idea by ID (used for detail screen).

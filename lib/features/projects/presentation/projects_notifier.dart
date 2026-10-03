@@ -130,6 +130,7 @@ class ProjectsActionNotifier extends Notifier<AsyncValue<void>> {
     required String decision,
     String? rationale,
     String entryType = 'decision',
+    String category = 'Other',
   }) async {
     try {
       final item = await _repository.logDecision(
@@ -138,6 +139,7 @@ class ProjectsActionNotifier extends Notifier<AsyncValue<void>> {
         decision: decision,
         rationale: rationale,
         entryType: entryType,
+        category: category,
       );
       ref.invalidate(projectDecisionsProvider(projectId));
       return item;

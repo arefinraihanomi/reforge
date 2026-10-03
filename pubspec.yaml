@@ -41,6 +41,8 @@ dependencies:
   flutter_dotenv: ^6.0.1
   lucide_icons_flutter: ^3.1.20
   google_sign_in: ^6.2.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
 
 dev_dependencies:
   flutter_test:

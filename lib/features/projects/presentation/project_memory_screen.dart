@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/local_storage/offline_decisions_cache.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../models/project_decision.dart';
@@ -24,6 +25,25 @@ class ProjectMemoryScreen extends ConsumerStatefulWidget {
 
 class _ProjectMemoryScreenState extends ConsumerState<ProjectMemoryScreen> {
   String _typeFilter = 'all'; // 'all', 'decision', 'blocker', 'note'
+  String _categoryFilter = 'all'; // 'all' + any category string
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  static const List<String> _categories = [
+    'all',
+    'Architecture',
+    'Database',
+    'UI/UX',
+    'Scope',
+    'DevOps',
+    'Other',
+  ];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +89,7 @@ class _ProjectMemoryScreenState extends ConsumerState<ProjectMemoryScreen> {
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.refreshCw, size: 18),
+            tooltip: 'Refresh Timeline',
             onPressed: () => ref.invalidate(projectDecisionsProvider(widget.projectId)),
           ),
         ],
@@ -80,12 +101,154 @@ class _ProjectMemoryScreenState extends ConsumerState<ProjectMemoryScreen> {
         icon: const Icon(LucideIcons.plus, size: 18),
         label: const Text('Log Decision'),
       ),
-      body: Column(
-        children: [
-          // Filter Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      body: decisionsAsync.when(
+        loading: () {
+          // Show cached data while loading to avoid blank screen
+          final cached = OfflineDecisionsCache.loadDecisions(widget.projectId);
+          if (cached.isNotEmpty) {
+            return _buildBody(context, cached, isFromCache: true);
+          }
+          return const Center(child: CircularProgressIndicator(color: ReforgeColors.forgeAccent));
+        },
+        error: (error, _) {
+          // Graceful offline fallback to cached data
+          final cached = OfflineDecisionsCache.loadDecisions(widget.projectId);
+          if (cached.isNotEmpty) {
+            return _buildBody(context, cached, isFromCache: true, errorMessage: 'Showing cached data. Network error: ${error.toString().replaceAll('Exception: ', '')}');
+          }
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(LucideIcons.alertCircle, size: 36, color: ReforgeColors.danger),
+                  const SizedBox(height: 8),
+                  const Text('Failed to load memory timeline', style: ReforgeTypography.cardTitle),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => ref.invalidate(projectDecisionsProvider(widget.projectId)),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        data: (decisions) {
+          // Cache fresh data locally for future offline use
+          OfflineDecisionsCache.saveDecisions(widget.projectId, decisions);
+          return _buildBody(context, decisions);
+        },
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, List<ProjectDecision> decisions, {
+    bool isFromCache = false,
+    String? errorMessage,
+  }) {
+    // Apply filters
+    final filtered = decisions.where((d) {
+      final matchesType = _typeFilter == 'all' || d.entryType == _typeFilter;
+      final matchesCategory = _categoryFilter == 'all' || d.category == _categoryFilter;
+      final matchesSearch = _searchQuery.isEmpty ||
+          d.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          d.decision.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (d.rationale?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      return matchesType && matchesCategory && matchesSearch;
+    }).toList();
+
+    // Build counts for summary bar
+    final decisionCount = decisions.where((d) => d.isDecision).length;
+    final blockerCount = decisions.where((d) => d.isBlocker).length;
+    final noteCount = decisions.where((d) => d.isNote).length;
+
+    return Column(
+      children: [
+        // Offline cache banner
+        if (isFromCache)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: ReforgeColors.warningBg,
             child: Row(
+              children: [
+                const Icon(LucideIcons.wifiOff, size: 14, color: ReforgeColors.warning),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    errorMessage ?? 'Showing cached timeline data (offline)',
+                    style: ReforgeTypography.bodySmall.copyWith(color: ReforgeColors.warning),
+                    maxLines: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Summary Bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Row(
+            children: [
+              _SummaryPill(icon: LucideIcons.checkCircle2, label: '$decisionCount Decisions', color: ReforgeColors.success),
+              const SizedBox(width: 8),
+              _SummaryPill(icon: LucideIcons.alertTriangle, label: '$blockerCount Blockers', color: ReforgeColors.danger),
+              const SizedBox(width: 8),
+              _SummaryPill(icon: LucideIcons.fileText, label: '$noteCount Notes', color: ReforgeColors.category),
+            ],
+          ),
+        ),
+
+        // Search Bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (v) => setState(() => _searchQuery = v),
+            style: ReforgeTypography.bodyMedium,
+            decoration: InputDecoration(
+              hintText: 'Search memory entries...',
+              hintStyle: ReforgeTypography.body.copyWith(color: ReforgeColors.subtle),
+              prefixIcon: const Icon(LucideIcons.search, size: 18, color: ReforgeColors.muted),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(LucideIcons.x, size: 16, color: ReforgeColors.muted),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: ReforgeColors.cardSurface,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: ReforgeColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: ReforgeColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: ReforgeColors.forgeAccent, width: 1.5),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // Type Filter Row
+        SizedBox(
+          height: 34,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
               children: [
                 _buildFilterChip('all', 'All Memory'),
                 const SizedBox(width: 8),
@@ -97,53 +260,65 @@ class _ProjectMemoryScreenState extends ConsumerState<ProjectMemoryScreen> {
               ],
             ),
           ),
+        ),
 
-          // Timeline Body
-          Expanded(
-            child: decisionsAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: ReforgeColors.forgeAccent),
-              ),
-              error: (error, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(LucideIcons.alertCircle, size: 36, color: ReforgeColors.danger),
-                      const SizedBox(height: 8),
-                      const Text('Failed to load memory timeline', style: ReforgeTypography.cardTitle),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => ref.invalidate(projectDecisionsProvider(widget.projectId)),
-                        child: const Text('Retry'),
+        const SizedBox(height: 8),
+
+        // Category Filter Row
+        SizedBox(
+          height: 32,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: _categories.map((cat) {
+                final label = cat == 'all' ? 'All Categories' : cat;
+                final isSelected = _categoryFilter == cat;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    onTap: () => setState(() => _categoryFilter = cat),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isSelected ? ReforgeColors.category : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? ReforgeColors.category : ReforgeColors.border,
+                        ),
                       ),
-                    ],
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          color: isSelected ? Colors.white : ReforgeColors.muted,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              data: (decisions) {
-                final filtered = decisions.where((d) {
-                  if (_typeFilter == 'all') return true;
-                  return d.entryType == _typeFilter;
-                }).toList();
+                );
+              }).toList(),
+            ),
+          ),
+        ),
 
-                if (filtered.isEmpty) {
-                  return _buildEmptyState(context);
-                }
+        const SizedBox(height: 8),
 
-                return ListView.builder(
+        // Timeline Body
+        Expanded(
+          child: filtered.isEmpty
+              ? _buildEmptyState(context)
+              : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     return _buildTimelineItem(context, filtered[index], index == filtered.length - 1);
                   },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                ),
+        ),
+      ],
     );
   }
 
@@ -196,26 +371,31 @@ class _ProjectMemoryScreenState extends ConsumerState<ProjectMemoryScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No Memory Logs Yet',
+              _searchQuery.isNotEmpty || _typeFilter != 'all' || _categoryFilter != 'all'
+                  ? 'No matching memory entries'
+                  : 'No Memory Logs Yet',
               style: ReforgeTypography.cardTitle.copyWith(fontSize: 16),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Log decisions, technical blockers, and architectural choices to preserve project execution context.',
+            Text(
+              _searchQuery.isNotEmpty
+                  ? 'Try clearing the search or changing filters.'
+                  : 'Log decisions, technical blockers, and architectural choices to preserve project execution context.',
               style: ReforgeTypography.meta,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => LogDecisionDialog.show(context, projectId: widget.projectId),
-              icon: const Icon(LucideIcons.plus, size: 18),
-              label: const Text('Log First Decision'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ReforgeColors.deepSlate,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            if (_searchQuery.isEmpty && _typeFilter == 'all' && _categoryFilter == 'all')
+              ElevatedButton.icon(
+                onPressed: () => LogDecisionDialog.show(context, projectId: widget.projectId),
+                icon: const Icon(LucideIcons.plus, size: 18),
+                label: const Text('Log First Decision'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ReforgeColors.deepSlate,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -284,19 +464,41 @@ class _ProjectMemoryScreenState extends ConsumerState<ProjectMemoryScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: typeColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          badgeLabel,
-                          style: ReforgeTypography.badge.copyWith(
-                            color: typeColor,
-                            fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: typeColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              badgeLabel,
+                              style: ReforgeTypography.badge.copyWith(
+                                color: typeColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          // Category pill
+                          if (item.category != 'Other') ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: ReforgeColors.categoryBg,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: ReforgeColors.categoryBorder),
+                              ),
+                              child: Text(
+                                item.category,
+                                style: ReforgeTypography.badge.copyWith(
+                                  color: ReforgeColors.category,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       if (item.createdAt != null)
                         Text(
@@ -345,6 +547,37 @@ class _ProjectMemoryScreenState extends ConsumerState<ProjectMemoryScreen> {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _SummaryPill({required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
           ),
         ],
       ),

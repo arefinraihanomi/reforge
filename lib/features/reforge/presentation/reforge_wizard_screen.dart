@@ -572,6 +572,40 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
   }
 
   Widget _buildStep3(Project ancestor) {
+    final v1Scope = ancestor.mvpScope ?? 'No scope defined for V1';
+    final v2Scope = _v2ScopeController.text.trim();
+    final hasScopeDiff = v2Scope.isNotEmpty && v2Scope != v1Scope;
+
+    // Pre-flight checklist items
+    final preflightItems = [
+      _PreflightItem(
+        label: 'V2 title is defined',
+        isPassed: _v2TitleController.text.trim().isNotEmpty,
+      ),
+      _PreflightItem(
+        label: 'Tighter MVP scope boundary is specified',
+        isPassed: v2Scope.isNotEmpty,
+      ),
+      _PreflightItem(
+        label: 'Scope differs from V1 (no copy-paste)',
+        isPassed: hasScopeDiff,
+      ),
+      _PreflightItem(
+        label: 'At least one lesson selected from V1',
+        isPassed: _selectedLessons.isNotEmpty,
+        isWarning: _selectedLessons.isEmpty,
+        warningNote: 'Optional, but recommended to carry forward V1 wisdom.',
+      ),
+      _PreflightItem(
+        label: 'Initial V2 tasks are defined',
+        isPassed: _initialTasks.isNotEmpty,
+      ),
+    ];
+
+    final allCriticalPassed = preflightItems
+        .where((i) => !i.isWarning)
+        .every((i) => i.isPassed);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -591,23 +625,129 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
           const SizedBox(height: 12),
         ],
 
+        // Pre-flight Checklist
+        Text('Pre-Flight Checklist', style: ReforgeTypography.cardTitle.copyWith(fontSize: 15)),
+        const SizedBox(height: 4),
+        const Text(
+          'Ensure all critical items pass before forging V2.',
+          style: ReforgeTypography.meta,
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: ReforgeColors.cardSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: ReforgeColors.border),
+          ),
+          child: Column(
+            children: preflightItems.map((item) {
+              final Color iconColor;
+              final IconData icon;
+              if (item.isPassed) {
+                iconColor = ReforgeColors.success;
+                icon = LucideIcons.checkCircle2;
+              } else if (item.isWarning) {
+                iconColor = ReforgeColors.warning;
+                icon = LucideIcons.alertCircle;
+              } else {
+                iconColor = ReforgeColors.danger;
+                icon = LucideIcons.xCircle;
+              }
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(icon, size: 18, color: iconColor),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.label,
+                            style: ReforgeTypography.body.copyWith(
+                              color: item.isPassed ? ReforgeColors.graphite : iconColor,
+                              fontWeight: item.isPassed ? FontWeight.normal : FontWeight.w500,
+                            ),
+                          ),
+                          if (!item.isPassed && item.warningNote != null)
+                            Text(item.warningNote!, style: ReforgeTypography.meta),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Scope Diff Panel
+        Text('Scope Diff: V1 → V2', style: ReforgeTypography.cardTitle.copyWith(fontSize: 15)),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _ScopeDiffCard(
+                label: 'V1 Scope (Ancestor)',
+                content: v1Scope,
+                color: ReforgeColors.dangerBg,
+                borderColor: ReforgeColors.dangerBorder,
+                icon: LucideIcons.history,
+                iconColor: ReforgeColors.danger,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ScopeDiffCard(
+                label: 'V2 Scope (New)',
+                content: v2Scope.isNotEmpty ? v2Scope : '(not yet defined — go back to Step 2)',
+                color: ReforgeColors.successBg,
+                borderColor: ReforgeColors.successBorder,
+                icon: LucideIcons.hammer,
+                iconColor: ReforgeColors.success,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        // Summary card
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: ReforgeColors.forgeAccent.withValues(alpha: 0.08),
+            color: allCriticalPassed
+                ? ReforgeColors.forgeAccent.withValues(alpha: 0.08)
+                : ReforgeColors.dangerBg,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: ReforgeColors.forgeAccent.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: allCriticalPassed
+                  ? ReforgeColors.forgeAccent.withValues(alpha: 0.3)
+                  : ReforgeColors.dangerBorder,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.hammer, color: ReforgeColors.forgeAccent, size: 20),
+                  Icon(
+                    allCriticalPassed ? LucideIcons.hammer : LucideIcons.alertTriangle,
+                    color: allCriticalPassed ? ReforgeColors.forgeAccent : ReforgeColors.danger,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
-                    'Ready to Forge V2 Project',
-                    style: ReforgeTypography.cardTitle.copyWith(color: ReforgeColors.forgeAccent),
+                    allCriticalPassed ? 'Ready to Forge V2 Project' : 'Complete checklist before forging',
+                    style: ReforgeTypography.cardTitle.copyWith(
+                      color: allCriticalPassed ? ReforgeColors.forgeAccent : ReforgeColors.danger,
+                    ),
                   ),
                 ],
               ),
@@ -616,14 +756,84 @@ class _ReforgeWizardScreenState extends ConsumerState<ReforgeWizardScreen> {
               const SizedBox(height: 4),
               Text('Ancestor Link: ${ancestor.title} (V1)', style: ReforgeTypography.meta),
               const SizedBox(height: 4),
-              Text('Scope Boundary: ${_v2ScopeController.text}', style: ReforgeTypography.body),
-              const SizedBox(height: 8),
               Text('Lessons Carried Forward: ${_selectedLessons.length}', style: ReforgeTypography.meta),
               Text('Initial Tasks Configured: ${_initialTasks.length}', style: ReforgeTypography.meta),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pre-flight checklist item data model
+// ---------------------------------------------------------------------------
+class _PreflightItem {
+  final String label;
+  final bool isPassed;
+  final bool isWarning;
+  final String? warningNote;
+
+  const _PreflightItem({
+    required this.label,
+    required this.isPassed,
+    this.isWarning = false,
+    this.warningNote,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Scope diff card widget
+// ---------------------------------------------------------------------------
+class _ScopeDiffCard extends StatelessWidget {
+  final String label;
+  final String content;
+  final Color color;
+  final Color borderColor;
+  final IconData icon;
+  final Color iconColor;
+
+  const _ScopeDiffCard({
+    required this.label,
+    required this.content,
+    required this.color,
+    required this.borderColor,
+    required this.icon,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: iconColor),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: ReforgeTypography.badge.copyWith(color: iconColor, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            content,
+            style: ReforgeTypography.bodySmall.copyWith(height: 1.4),
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }
