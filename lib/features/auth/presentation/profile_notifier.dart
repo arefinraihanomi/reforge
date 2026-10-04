@@ -84,7 +84,10 @@ class ProfileNotifier extends AsyncNotifier<UserProfileState> {
     // Default local demo mode user profile
     final profile = UserProfile(
       id: 'local-user',
-      displayName: user?.email?.split('@').first ?? 'Arefin Raihan',
+      displayName:
+          user?.userMetadata?['display_name'] as String? ??
+          user?.email?.split('@').first ??
+          'Arefin Raihan',
       avatarUrl: null,
       createdAt: DateTime.now().subtract(const Duration(days: 45)),
     );

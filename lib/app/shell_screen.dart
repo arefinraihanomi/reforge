@@ -28,17 +28,15 @@ class ShellTabNotifier extends Notifier<int> {
   void selectTab(int index) => state = index;
 }
 
-final shellTabIndexProvider =
-    NotifierProvider<ShellTabNotifier, int>(ShellTabNotifier.new);
+final shellTabIndexProvider = NotifierProvider<ShellTabNotifier, int>(
+  ShellTabNotifier.new,
+);
 
 /// Wrapper that renders the persistent Desktop Sidebar for nested routes like Workspace, Idea Details, and Profile.
 class ReforgeDesktopShell extends ConsumerWidget {
   final Widget child;
 
-  const ReforgeDesktopShell({
-    super.key,
-    required this.child,
-  });
+  const ReforgeDesktopShell({super.key, required this.child});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -58,7 +56,11 @@ class ReforgeDesktopShell extends ConsumerWidget {
               context.go('/home');
             },
           ),
-          const VerticalDivider(width: 1, thickness: 1, color: ReforgeColors.border),
+          const VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: ReforgeColors.border,
+          ),
           Expanded(child: child),
         ],
       ),
@@ -70,10 +72,7 @@ class ReforgeDesktopShell extends ConsumerWidget {
 class ReforgeShellScreen extends ConsumerStatefulWidget {
   final int initialTab;
 
-  const ReforgeShellScreen({
-    super.key,
-    this.initialTab = 0,
-  });
+  const ReforgeShellScreen({super.key, this.initialTab = 0});
 
   @override
   ConsumerState<ReforgeShellScreen> createState() => _ReforgeShellScreenState();
@@ -147,7 +146,11 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
                 onSelectTab: (index) =>
                     ref.read(shellTabIndexProvider.notifier).selectTab(index),
               ),
-              const VerticalDivider(width: 1, thickness: 1, color: ReforgeColors.border),
+              const VerticalDivider(
+                width: 1,
+                thickness: 1,
+                color: ReforgeColors.border,
+              ),
               Expanded(
                 child: _AnimatedTabBody(
                   currentIndex: currentIndex,
@@ -162,7 +165,28 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
 
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: _screens),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: FloatingNavigationBar(
+        currentIndex: currentIndex,
+        onSelectTab: (index) =>
+            ref.read(shellTabIndexProvider.notifier).selectTab(index),
+      ),
+    );
+  }
+}
+
+class FloatingNavigationBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onSelectTab;
+
+  const FloatingNavigationBar({
+    super.key,
+    required this.currentIndex,
+    required this.onSelectTab,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         decoration: BoxDecoration(
           color: ReforgeColors.deepSlate.withValues(alpha: 0.95),
@@ -179,71 +203,67 @@ class _ReforgeShellScreenState extends ConsumerState<ReforgeShellScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _NavItem(
-                  icon: LucideIcons.layoutGrid,
-                  label: 'Home',
-                  isSelected: currentIndex == 0,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(shellTabIndexProvider.notifier).selectTab(0);
-                  },
-                ),
-                _NavItem(
-                  icon: LucideIcons.lightbulb,
-                  label: 'Ideas',
-                  isSelected: currentIndex == 1,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(shellTabIndexProvider.notifier).selectTab(1);
-                  },
-                ),
-                _NavItem(
-                  icon: LucideIcons.hammer,
-                  label: 'Projects',
-                  isSelected: currentIndex == 2,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(shellTabIndexProvider.notifier).selectTab(2);
-                  },
-                ),
-                _NavItem(
-                  icon: LucideIcons.skull,
-                  label: 'Graveyard',
-                  isSelected: currentIndex == 3,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(shellTabIndexProvider.notifier).selectTab(3);
-                  },
-                ),
-                _NavItem(
-                  icon: LucideIcons.bookOpen,
-                  label: 'Reflect',
-                  isSelected: currentIndex == 4,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(shellTabIndexProvider.notifier).selectTab(4);
-                  },
-                ),
-                _NavItem(
-                  icon: LucideIcons.barChart2,
-                  label: 'Analytics',
-                  isSelected: currentIndex == 5,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(shellTabIndexProvider.notifier).selectTab(5);
-                  },
-                ),
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.layoutGrid,
+                label: 'Home',
+                isSelected: currentIndex == 0,
+                onTap: () => _selectTab(0),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.lightbulb,
+                label: 'Ideas',
+                isSelected: currentIndex == 1,
+                onTap: () => _selectTab(1),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.hammer,
+                label: 'Projects',
+                isSelected: currentIndex == 2,
+                onTap: () => _selectTab(2),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.skull,
+                label: 'Graveyard',
+                isSelected: currentIndex == 3,
+                onTap: () => _selectTab(3),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.bookOpen,
+                label: 'Reflect',
+                isSelected: currentIndex == 4,
+                onTap: () => _selectTab(4),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: LucideIcons.barChart2,
+                label: 'Analytics',
+                isSelected: currentIndex == 5,
+                onTap: () => _selectTab(5),
+              ),
+            ),
               ],
             ),
           ),
         ),
-      ),
-    );
+      );
+  }
+
+  void _selectTab(int index) {
+    HapticFeedback.lightImpact();
+    onSelectTab(index);
   }
 }
-
 
 /// A desktop navigation sidebar widget.
 class _DesktopSidebar extends ConsumerWidget {
@@ -260,7 +280,8 @@ class _DesktopSidebar extends ConsumerWidget {
     final profileAsync = ref.watch(profileNotifierProvider);
     final profileName = profileAsync.value?.profile.displayName;
     final currentUser = ref.watch(currentUserProvider);
-    final displayName = profileName ??
+    final displayName =
+        profileName ??
         (currentUser?.userMetadata?['display_name'] as String? ??
             (currentUser?.email != null
                 ? currentUser!.email!.split('@').first
@@ -274,7 +295,10 @@ class _DesktopSidebar extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 16.0,
+              ),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Image.asset(
@@ -427,9 +451,7 @@ class _SidebarNavItem extends StatelessWidget {
     final iconColor = isSelected
         ? ReforgeColors.forgeAccent
         : ReforgeColors.muted;
-    final textColor = isSelected
-        ? Colors.white
-        : ReforgeColors.graphite;
+    final textColor = isSelected ? Colors.white : ReforgeColors.graphite;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 3),
@@ -449,7 +471,9 @@ class _SidebarNavItem extends StatelessWidget {
                   width: 3,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isSelected ? ReforgeColors.forgeAccent : Colors.transparent,
+                    color: isSelected
+                        ? ReforgeColors.forgeAccent
+                        : Colors.transparent,
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(3),
                       bottomRight: Radius.circular(3),
@@ -459,21 +483,22 @@ class _SidebarNavItem extends StatelessWidget {
                 // Nav item content
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 10,
+                    ),
                     child: Row(
                       children: [
-                        Icon(
-                          icon,
-                          size: 18,
-                          color: iconColor,
-                        ),
+                        Icon(icon, size: 18, color: iconColor),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             label,
                             style: TextStyle(
                               fontSize: 13,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
                               color: textColor,
                             ),
                             maxLines: 1,
@@ -516,18 +541,21 @@ class _NavItem extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 60,
+        width: double.infinity,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 22, color: color),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: color,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: color,
+                ),
               ),
             ),
           ],
@@ -544,10 +572,7 @@ class _AnimatedTabBody extends StatefulWidget {
   final int currentIndex;
   final List<Widget> children;
 
-  const _AnimatedTabBody({
-    required this.currentIndex,
-    required this.children,
-  });
+  const _AnimatedTabBody({required this.currentIndex, required this.children});
 
   @override
   State<_AnimatedTabBody> createState() => _AnimatedTabBodyState();
@@ -603,10 +628,7 @@ class _AnimatedTabBodyState extends State<_AnimatedTabBody>
               offstage: opacity == 0.0 && i != widget.currentIndex,
               child: TickerMode(
                 enabled: i == widget.currentIndex,
-                child: Opacity(
-                  opacity: opacity,
-                  child: child,
-                ),
+                child: Opacity(opacity: opacity, child: child),
               ),
             );
           },
@@ -627,7 +649,8 @@ class _HomeTab extends ConsumerWidget {
     final profileAsync = ref.watch(profileNotifierProvider);
     final profileName = profileAsync.value?.profile.displayName;
     final currentUser = ref.watch(currentUserProvider);
-    final displayName = profileName ??
+    final displayName =
+        profileName ??
         (currentUser?.userMetadata?['display_name'] as String? ??
             (currentUser?.email != null
                 ? currentUser!.email!.split('@').first
@@ -639,7 +662,8 @@ class _HomeTab extends ConsumerWidget {
     final graveyardAsync = ref.watch(abandonedProjectsProvider);
     final lessonsAsync = ref.watch(allLessonsProvider);
 
-    final sparksCount = ideasStatsAsync.value?.totalSparks ?? ideasAsync.value?.length ?? 0;
+    final sparksCount =
+        ideasStatsAsync.value?.totalSparks ?? ideasAsync.value?.length ?? 0;
     final activeCount = activeProjectsAsync.value?.length ?? 0;
     final graveyardCount = graveyardAsync.value?.length ?? 0;
     final lessonsCount = lessonsAsync.value?.length ?? 0;
@@ -656,15 +680,21 @@ class _HomeTab extends ConsumerWidget {
                   Image.asset(
                     'assets/brand/app_logo.png',
                     height: 28,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Text('Reforge', style: ReforgeTypography.screenTitle),
+                    errorBuilder: (context, error, stackTrace) => const Text(
+                      'Reforge',
+                      style: ReforgeTypography.screenTitle,
+                    ),
                   ),
                 ],
               ),
         actions: [
           IconButton(
             tooltip: 'Reforge Guide 💡',
-            icon: const Icon(LucideIcons.helpCircle, size: 20, color: ReforgeColors.forgeAccent),
+            icon: const Icon(
+              LucideIcons.helpCircle,
+              size: 20,
+              color: ReforgeColors.forgeAccent,
+            ),
             onPressed: () => ReforgeOnboardingDialog.show(context, ref),
           ),
           IconButton(
@@ -727,7 +757,10 @@ class _HomeTab extends ConsumerWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final isDesktop = constraints.maxWidth >= 850;
@@ -738,28 +771,36 @@ class _HomeTab extends ConsumerWidget {
                         count: sparksCount,
                         icon: LucideIcons.lightbulb,
                         iconColor: ReforgeColors.forgeAccent,
-                        onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(1),
+                        onTap: () => ref
+                            .read(shellTabIndexProvider.notifier)
+                            .selectTab(1),
                       ),
                       _MetricCard(
                         label: 'Active Builds',
                         count: activeCount,
                         icon: LucideIcons.hammer,
                         iconColor: const Color(0xFF3B82F6),
-                        onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(2),
+                        onTap: () => ref
+                            .read(shellTabIndexProvider.notifier)
+                            .selectTab(2),
                       ),
                       _MetricCard(
                         label: 'Graveyard',
                         count: graveyardCount,
                         icon: LucideIcons.skull,
                         iconColor: ReforgeColors.danger,
-                        onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(3),
+                        onTap: () => ref
+                            .read(shellTabIndexProvider.notifier)
+                            .selectTab(3),
                       ),
                       _MetricCard(
                         label: 'Key Lessons',
                         count: lessonsCount,
                         icon: LucideIcons.bookOpen,
                         iconColor: const Color(0xFF10B981),
-                        onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(4),
+                        onTap: () => ref
+                            .read(shellTabIndexProvider.notifier)
+                            .selectTab(4),
                       ),
                     ];
 
@@ -769,10 +810,18 @@ class _HomeTab extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Active Workspaces', style: ReforgeTypography.sectionTitle),
+                            const Text(
+                              'Active Workspaces',
+                              style: ReforgeTypography.sectionTitle,
+                            ),
                             TextButton(
-                              onPressed: () => ref.read(shellTabIndexProvider.notifier).selectTab(2),
-                              child: const Text('View All →', style: ReforgeTypography.buttonSecondary),
+                              onPressed: () => ref
+                                  .read(shellTabIndexProvider.notifier)
+                                  .selectTab(2),
+                              child: const Text(
+                                'View All →',
+                                style: ReforgeTypography.buttonSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -781,7 +830,9 @@ class _HomeTab extends ConsumerWidget {
                           loading: () => const Center(
                             child: Padding(
                               padding: EdgeInsets.all(20),
-                              child: CircularProgressIndicator(color: ReforgeColors.forgeAccent),
+                              child: CircularProgressIndicator(
+                                color: ReforgeColors.forgeAccent,
+                              ),
                             ),
                           ),
                           error: (_, _) => Container(
@@ -791,7 +842,10 @@ class _HomeTab extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: ReforgeColors.border),
                             ),
-                            child: const Text('Could not load active builds.', style: ReforgeTypography.meta),
+                            child: const Text(
+                              'Could not load active builds.',
+                              style: ReforgeTypography.meta,
+                            ),
                           ),
                           data: (projects) {
                             if (projects.isEmpty) {
@@ -801,7 +855,9 @@ class _HomeTab extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                   color: ReforgeColors.cardSurface,
                                   borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: ReforgeColors.border),
+                                  border: Border.all(
+                                    color: ReforgeColors.border,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -817,8 +873,13 @@ class _HomeTab extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 12),
                                     ElevatedButton.icon(
-                                      onPressed: () => ref.read(shellTabIndexProvider.notifier).selectTab(1),
-                                      icon: const Icon(LucideIcons.lightbulb, size: 16),
+                                      onPressed: () => ref
+                                          .read(shellTabIndexProvider.notifier)
+                                          .selectTab(1),
+                                      icon: const Icon(
+                                        LucideIcons.lightbulb,
+                                        size: 16,
+                                      ),
                                       label: const Text('Open Idea Vault'),
                                     ),
                                   ],
@@ -829,9 +890,13 @@ class _HomeTab extends ConsumerWidget {
                             return Column(
                               children: projects.take(2).map((project) {
                                 final tasks = project.tasks;
-                                final completedCount = tasks.where((t) => t.isCompleted).length;
+                                final completedCount = tasks
+                                    .where((t) => t.isCompleted)
+                                    .length;
                                 final totalCount = tasks.length;
-                                final progress = totalCount > 0 ? completedCount / totalCount : 0.0;
+                                final progress = totalCount > 0
+                                    ? completedCount / totalCount
+                                    : 0.0;
 
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 12),
@@ -839,34 +904,47 @@ class _HomeTab extends ConsumerWidget {
                                   decoration: BoxDecoration(
                                     color: ReforgeColors.cardSurface,
                                     borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: ReforgeColors.border),
+                                    border: Border.all(
+                                      color: ReforgeColors.border,
+                                    ),
                                   ),
                                   child: InkWell(
-                                    onTap: () => context.go('/projects/${project.id}'),
+                                    onTap: () =>
+                                        context.go('/projects/${project.id}'),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Expanded(
                                               child: Text(
                                                 project.title,
-                                                style: ReforgeTypography.cardTitle,
+                                                style:
+                                                    ReforgeTypography.cardTitle,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 3,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: ReforgeColors.forgeAccentBg,
-                                                borderRadius: BorderRadius.circular(6),
+                                                color:
+                                                    ReforgeColors.forgeAccentBg,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
                                               ),
                                               child: const Text(
                                                 'BUILDING',
                                                 style: TextStyle(
-                                                  color: ReforgeColors.forgeAccent,
+                                                  color:
+                                                      ReforgeColors.forgeAccent,
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.bold,
                                                 ),
@@ -874,7 +952,8 @@ class _HomeTab extends ConsumerWidget {
                                             ),
                                           ],
                                         ),
-                                        if (project.mvpScope != null && project.mvpScope!.isNotEmpty) ...[
+                                        if (project.mvpScope != null &&
+                                            project.mvpScope!.isNotEmpty) ...[
                                           const SizedBox(height: 6),
                                           Text(
                                             project.mvpScope!,
@@ -888,12 +967,15 @@ class _HomeTab extends ConsumerWidget {
                                           children: [
                                             Expanded(
                                               child: ClipRRect(
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                                 child: LinearProgressIndicator(
                                                   value: progress,
                                                   minHeight: 6,
-                                                  backgroundColor: ReforgeColors.warmSurface,
-                                                  color: ReforgeColors.forgeAccent,
+                                                  backgroundColor:
+                                                      ReforgeColors.warmSurface,
+                                                  color:
+                                                      ReforgeColors.forgeAccent,
                                                 ),
                                               ),
                                             ),
@@ -921,10 +1003,18 @@ class _HomeTab extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Reflection Takeaway', style: ReforgeTypography.sectionTitle),
+                            const Text(
+                              'Reflection Takeaway',
+                              style: ReforgeTypography.sectionTitle,
+                            ),
                             TextButton(
-                              onPressed: () => ref.read(shellTabIndexProvider.notifier).selectTab(4),
-                              child: const Text('Vault →', style: ReforgeTypography.buttonSecondary),
+                              onPressed: () => ref
+                                  .read(shellTabIndexProvider.notifier)
+                                  .selectTab(4),
+                              child: const Text(
+                                'Vault →',
+                                style: ReforgeTypography.buttonSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -940,12 +1030,17 @@ class _HomeTab extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                   color: ReforgeColors.cardSurface,
                                   borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: ReforgeColors.border),
+                                  border: Border.all(
+                                    color: ReforgeColors.border,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('No lessons recorded yet.', style: ReforgeTypography.cardTitle),
+                                    const Text(
+                                      'No lessons recorded yet.',
+                                      style: ReforgeTypography.cardTitle,
+                                    ),
                                     const SizedBox(height: 4),
                                     const Text(
                                       'Capture engineering guidelines from builds to avoid repeating past mistakes.',
@@ -953,9 +1048,16 @@ class _HomeTab extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 10),
                                     OutlinedButton.icon(
-                                      onPressed: () => ref.read(shellTabIndexProvider.notifier).selectTab(4),
-                                      icon: const Icon(LucideIcons.bookOpen, size: 16),
-                                      label: const Text('Open Reflection Vault'),
+                                      onPressed: () => ref
+                                          .read(shellTabIndexProvider.notifier)
+                                          .selectTab(4),
+                                      icon: const Icon(
+                                        LucideIcons.bookOpen,
+                                        size: 16,
+                                      ),
+                                      label: const Text(
+                                        'Open Reflection Vault',
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -964,25 +1066,35 @@ class _HomeTab extends ConsumerWidget {
 
                             final latest = lessons.first;
                             return InkWell(
-                              onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(4),
+                              onTap: () => ref
+                                  .read(shellTabIndexProvider.notifier)
+                                  .selectTab(4),
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: ReforgeColors.cardSurface,
                                   borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: ReforgeColors.border),
+                                  border: Border.all(
+                                    color: ReforgeColors.border,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: ReforgeColors.forgeAccentBg,
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: Text(
                                             latest.category.toUpperCase(),
@@ -995,24 +1107,33 @@ class _HomeTab extends ConsumerWidget {
                                         ),
                                         if (latest.createdAt != null)
                                           Text(
-                                            DateFormat.yMMMd().format(latest.createdAt!),
+                                            DateFormat.yMMMd().format(
+                                              latest.createdAt!,
+                                            ),
                                             style: ReforgeTypography.caption,
                                           ),
                                       ],
                                     ),
                                     const SizedBox(height: 10),
                                     Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(LucideIcons.lightbulb, size: 18, color: ReforgeColors.forgeAccent),
+                                        const Icon(
+                                          LucideIcons.lightbulb,
+                                          size: 18,
+                                          color: ReforgeColors.forgeAccent,
+                                        ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             latest.lesson,
-                                            style: ReforgeTypography.body.copyWith(
-                                              color: ReforgeColors.deepSlate,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: ReforgeTypography.body
+                                                .copyWith(
+                                                  color:
+                                                      ReforgeColors.deepSlate,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ),
                                       ],
@@ -1032,10 +1153,18 @@ class _HomeTab extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Recent Sparks', style: ReforgeTypography.sectionTitle),
+                            const Text(
+                              'Recent Sparks',
+                              style: ReforgeTypography.sectionTitle,
+                            ),
                             TextButton(
-                              onPressed: () => ref.read(shellTabIndexProvider.notifier).selectTab(1),
-                              child: const Text('Vault →', style: ReforgeTypography.buttonSecondary),
+                              onPressed: () => ref
+                                  .read(shellTabIndexProvider.notifier)
+                                  .selectTab(1),
+                              child: const Text(
+                                'Vault →',
+                                style: ReforgeTypography.buttonSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -1051,12 +1180,17 @@ class _HomeTab extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                   color: ReforgeColors.cardSurface,
                                   borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: ReforgeColors.border),
+                                  border: Border.all(
+                                    color: ReforgeColors.border,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Your Ideas Vault is empty.', style: ReforgeTypography.cardTitle),
+                                    const Text(
+                                      'Your Ideas Vault is empty.',
+                                      style: ReforgeTypography.cardTitle,
+                                    ),
                                     const SizedBox(height: 4),
                                     const Text(
                                       'Capture initial thoughts, technical spikes, and project sparks.',
@@ -1064,8 +1198,13 @@ class _HomeTab extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 10),
                                     ElevatedButton.icon(
-                                      onPressed: () => ref.read(shellTabIndexProvider.notifier).selectTab(1),
-                                      icon: const Icon(LucideIcons.plus, size: 16),
+                                      onPressed: () => ref
+                                          .read(shellTabIndexProvider.notifier)
+                                          .selectTab(1),
+                                      icon: const Icon(
+                                        LucideIcons.plus,
+                                        size: 16,
+                                      ),
                                       label: const Text('Capture Spark'),
                                     ),
                                   ],
@@ -1081,17 +1220,23 @@ class _HomeTab extends ConsumerWidget {
                                   decoration: BoxDecoration(
                                     color: ReforgeColors.cardSurface,
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: ReforgeColors.border),
+                                    border: Border.all(
+                                      color: ReforgeColors.border,
+                                    ),
                                   ),
                                   child: InkWell(
-                                    onTap: () => ref.read(shellTabIndexProvider.notifier).selectTab(1),
+                                    onTap: () => ref
+                                        .read(shellTabIndexProvider.notifier)
+                                        .selectTab(1),
                                     child: Row(
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: ReforgeColors.forgeAccentBg,
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                           child: const Icon(
                                             LucideIcons.lightbulb,
@@ -1102,25 +1247,35 @@ class _HomeTab extends ConsumerWidget {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 idea.title,
-                                                style: ReforgeTypography.cardTitle.copyWith(fontSize: 14),
+                                                style: ReforgeTypography
+                                                    .cardTitle
+                                                    .copyWith(fontSize: 14),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
-                                              if (idea.hypothesis != null && idea.hypothesis!.isNotEmpty)
+                                              if (idea.hypothesis != null &&
+                                                  idea.hypothesis!.isNotEmpty)
                                                 Text(
                                                   idea.hypothesis!,
-                                                  style: ReforgeTypography.caption,
+                                                  style:
+                                                      ReforgeTypography.caption,
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                             ],
                                           ),
                                         ),
-                                        const Icon(LucideIcons.chevronRight, size: 16, color: ReforgeColors.muted),
+                                        const Icon(
+                                          LucideIcons.chevronRight,
+                                          size: 16,
+                                          color: ReforgeColors.muted,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -1143,7 +1298,10 @@ class _HomeTab extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Hi, $displayName', style: ReforgeTypography.greeting),
+                                  Text(
+                                    'Hi, $displayName',
+                                    style: ReforgeTypography.greeting,
+                                  ),
                                   const SizedBox(height: 2),
                                   const Text(
                                     'Keep building. Keep refining.',
@@ -1170,12 +1328,18 @@ class _HomeTab extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 color: ReforgeColors.successBg,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: ReforgeColors.successBorder),
+                                border: Border.all(
+                                  color: ReforgeColors.successBorder,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.circle, size: 8, color: ReforgeColors.success),
+                                  const Icon(
+                                    Icons.circle,
+                                    size: 8,
+                                    color: ReforgeColors.success,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Workshop Active',
@@ -1197,12 +1361,14 @@ class _HomeTab extends ConsumerWidget {
                         if (isDesktop)
                           Row(
                             children: metricCards
-                                .map((card) => Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(right: 12),
-                                        child: card,
-                                      ),
-                                    ))
+                                .map(
+                                  (card) => Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: card,
+                                    ),
+                                  ),
+                                )
                                 .toList(),
                           )
                         else ...[
@@ -1244,9 +1410,7 @@ class _HomeTab extends ConsumerWidget {
                               Expanded(
                                 flex: 2,
                                 child: Column(
-                                  children: [
-                                    reflectionTakeawayWidget,
-                                  ],
+                                  children: [reflectionTakeawayWidget],
                                 ),
                               ),
                             ],
