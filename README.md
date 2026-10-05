@@ -153,16 +153,6 @@ reforge/
 
 ---
 
-## 🌿 Contribution & Git Workflow
-
-- **Branching Strategy**:
-  - `main`: Production-ready, stable releases.
-  - `feature/<name>`: New feature implementations.
-  - `fix/<name>`: Bug fixes and urgent patches.
-- **Commit Style**: [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat: implement graveyard list view`, `fix: preserve postmortem form draft on network timeout`).
-- **Review Policy**: Every change must adhere to [rules.md](file:///home/arefin-raihan/Desktop/Flutter%20Projects/reforge/rules.md) and pass `flutter analyze` and `flutter test`.
-
----
 
 ## 📄 License
 
